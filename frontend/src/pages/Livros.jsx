@@ -11,27 +11,34 @@ export default function Livros() {
 
   const generos = useMemo(
     () => ["Todos os gêneros", ...new Set(acervo.map((item) => item.genero))],
-    []
+    [acervo]
   );
 
   const livrosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-
     return acervo.filter((livro) => {
       const atendeGenero = genero === "Todos os gêneros" || livro.genero === genero;
-
-      if (!atendeGenero) {
-        return false;
-      }
-
-      if (!termo) {
-        return true;
-      }
-
+      if (!atendeGenero) return false;
+      if (!termo) return true;
       const alvoBusca = `${livro.titulo} ${livro.autor} ${livro.isbn}`.toLowerCase();
       return alvoBusca.includes(termo);
     });
-  }, [busca, genero]);
+  }, [busca, genero, acervo]);
+
+  // FUNÇÃO PARA SALVAR NA ESTANTE
+  const adicionarAEstante = (livro) => {
+    const estanteAtual = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
+    
+    // Verifica se o livro já está lá para não duplicar
+    if (estanteAtual.find((item) => item.id === livro.id)) {
+      alert("Este livro já está na sua estante!");
+      return;
+    }
+
+    const novaEstante = [...estanteAtual, livro];
+    localStorage.setItem("minhaEstante", JSON.stringify(novaEstante));
+    alert(`${livro.titulo} foi adicionado à sua Estante!`);
+  };
 
   return (
     <section className="livros-page">
@@ -40,10 +47,7 @@ export default function Livros() {
           <p className="livros-kicker">Acervo</p>
           <h1>Livros</h1>
         </div>
-
-        <button type="button" className="livros-add-btn">
-          + Adicionar Livro
-        </button>
+        <button type="button" className="livros-add-btn">+ Adicionar Livro</button>
       </header>
 
       <div className="livros-filters">
@@ -53,28 +57,18 @@ export default function Livros() {
             id="busca-livros"
             type="search"
             value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            placeholder="Pesquisar por título, autor ou ISBN..."
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Pesquisar por título, autor..."
           />
         </label>
 
-        <select
-          value={genero}
-          onChange={(event) => setGenero(event.target.value)}
-          aria-label="Filtrar por gênero"
-        >
+        <select value={genero} onChange={(e) => setGenero(e.target.value)}>
           {generos.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
+            <option key={item} value={item}>{item}</option>
           ))}
         </select>
 
-        <select
-          value={modo}
-          onChange={(event) => setModo(event.target.value)}
-          aria-label="Modo de visualização"
-        >
+        <select value={modo} onChange={(e) => setModo(e.target.value)}>
           <option value="cards">Cards</option>
           <option value="lista">Lista</option>
         </select>
@@ -88,16 +82,20 @@ export default function Livros() {
               className="livro-card"
               style={{ "--livro-accent": getGeneroColor(livro.genero) }}
             >
-              <p className="livro-genero">{livro.genero}</p>
+              <div className="livro-card-header">
+                <p className="livro-genero">{livro.genero}</p>
+                <button 
+                  className="btn-add-estante" 
+                  onClick={() => adicionarAEstante(livro)}
+                  title="Salvar na Estante"
+                >
+                  🔖
+                </button>
+              </div>
               <h3>{livro.titulo}</h3>
-              <p className="livro-autor">
-                {livro.autor} • {livro.nacionalidade}
-              </p>
-
+              <p className="livro-autor">{livro.autor} • {livro.nacionalidade}</p>
               <div className="livro-meta">
-                <p>
-                  {livro.editora} • {livro.ano}
-                </p>
+                <p>{livro.editora} • {livro.ano}</p>
               </div>
             </article>
           ))}
@@ -115,20 +113,17 @@ export default function Livros() {
               <div>
                 <p className="livro-genero">{livro.genero}</p>
                 <h3>{livro.titulo}</h3>
-                <p className="livro-autor">
-                  {livro.autor} • {livro.nacionalidade}
-                </p>
+                <p className="livro-autor">{livro.autor}</p>
               </div>
-              <p>
-                {livro.editora} • {livro.ano}
-              </p>
+              <button 
+                className="btn-add-estante-list" 
+                onClick={() => adicionarAEstante(livro)}
+              >
+                🔖 Salvar
+              </button>
             </article>
           ))}
         </div>
-      )}
-
-      {livrosFiltrados.length === 0 && (
-        <p className="livros-vazio">Nenhum livro encontrado para os filtros selecionados.</p>
       )}
     </section>
   );

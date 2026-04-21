@@ -7,7 +7,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     { path: "/", label: "Início", icon: "🏠" },
     { path: "/livros", label: "Livros", icon: "📚" },
     { path: "/leitores", label: "Leitores", icon: "👤" },
-    { path: "/emprestimos", label: "Empréstimos", icon: "📄" },
+    { path: "/Estante", label: "Estante", icon: "📚" },
     { path: "/generos", label: "Gêneros", icon: "🏷️" },
   ];
 

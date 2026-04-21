@@ -6,7 +6,7 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Livros from "./pages/Livros";
 import Leitores from "./pages/Leitores";
-import Emprestimos from "./pages/Emprestimos";
+import Estante from "./pages/Estante";
 import Generos from "./pages/Generos";
 
 function App() {
@@ -22,7 +22,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/livros" element={<Livros />} />
             <Route path="/leitores" element={<Leitores />} />
-            <Route path="/emprestimos" element={<Emprestimos />} />
+            <Route path="/estante" element={<Estante />} />
             <Route path="/generos" element={<Generos />} />
           </Routes>
         </div>
