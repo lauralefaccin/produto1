@@ -7,8 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Livros from "./pages/Livros";
 import Leitores from "./pages/Leitores";
 import Emprestimos from "./pages/Emprestimos";
-import Reservas from "./pages/Reservas";
-import Multas from "./pages/Multas";
+import Generos from "./pages/Generos";
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -24,8 +23,7 @@ function App() {
             <Route path="/livros" element={<Livros />} />
             <Route path="/leitores" element={<Leitores />} />
             <Route path="/emprestimos" element={<Emprestimos />} />
-            <Route path="/reservas" element={<Reservas />} />
-            <Route path="/multas" element={<Multas />} />
+            <Route path="/generos" element={<Generos />} />
           </Routes>
         </div>
       </div>

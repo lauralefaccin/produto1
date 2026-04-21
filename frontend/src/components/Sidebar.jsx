@@ -8,8 +8,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     { path: "/livros", label: "Livros", icon: "📚" },
     { path: "/leitores", label: "Leitores", icon: "👤" },
     { path: "/emprestimos", label: "Empréstimos", icon: "📄" },
-    { path: "/reservas", label: "Reservas", icon: "📌" },
-    { path: "/multas", label: "Multas", icon: "⚠️" },
+    { path: "/generos", label: "Gêneros", icon: "🏷️" },
   ];
 
   return (
