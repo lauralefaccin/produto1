@@ -113,6 +113,10 @@
   border-bottom: none;
 }
 
+.leitores-table tbody tr:hover {
+  background: #fffdf8;
+}
+
 .leitores-table td {
   padding: 10px 14px;
   font-size: 13px;
@@ -150,6 +154,35 @@
   color: #3f311f;
 }
 
+/* ── Senha cell ──────────────────────────────────────────── */
+.senha-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-senha-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.btn-senha-toggle:hover {
+  opacity: 1;
+}
+
+/* ── Actions cell ────────────────────────────────────────── */
+.leitores-actions-cell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 /* ── Action button (inline table) ────────────────────────── */
 .btn-action {
   padding: 5px 12px;
@@ -161,12 +194,24 @@
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
+  white-space: nowrap;
 }
 
 .btn-action:hover {
   background: #fdf6ec;
   color: #c08928;
   border-color: #c8922a;
+}
+
+.btn-action-danger {
+  color: #8b2020;
+  border-color: #f7c1c1;
+}
+
+.btn-action-danger:hover {
+  background: #fde8e8;
+  color: #8b2020;
+  border-color: #f7c1c1;
 }
 
 /* ── Empty state ─────────────────────────────────────────── */
@@ -361,6 +406,7 @@
   .leitores-table td {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 4px 0;
   }
 
@@ -373,5 +419,9 @@
     letter-spacing: 0.06em;
     flex-shrink: 0;
     margin-right: 8px;
+  }
+
+  .leitores-actions-cell {
+    justify-content: flex-end;
   }
 }

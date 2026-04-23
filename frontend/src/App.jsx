@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState } from "react";
 
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import Sidebar from "./components/Sidebar";
+import Auth from "./pages/Auth";
 
 import Dashboard from "./pages/Dashboard";
 import Livros from "./pages/Livros";
@@ -9,26 +11,58 @@ import Leitores from "./pages/Leitores";
 import Estante from "./pages/Estante";
 import Generos from "./pages/Generos";
 
-function App() {
+function ProtectedApp() {
+  const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
-  return (
-    <BrowserRouter>
-      <div className="layout">
-        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-        <div className={`content ${collapsed ? "expanded" : ""}`}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/livros" element={<Livros />} />
-            <Route path="/leitores" element={<Leitores />} />
-            <Route path="/estante" element={<Estante />} />
-            <Route path="/generos" element={<Generos />} />
-          </Routes>
-        </div>
+  return (
+    <div className="layout">
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      <div className={`content ${collapsed ? "expanded" : ""}`}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/livros" element={<Livros />} />
+          <Route path="/estante" element={<Estante />} />
+          <Route path="/generos" element={<Generos />} />
+          <Route
+            path="/leitores"
+            element={
+              user.tipo === "bibliotecario"
+                ? <Leitores />
+                : <Navigate to="/" replace />
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
-    </BrowserRouter>
+    </div>
   );
 }
 
-export default App;
+function AppRoutes() {
+  const { user } = useAuth();
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/" replace /> : <Auth />}
+      />
+      <Route path="/*" element={<ProtectedApp />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

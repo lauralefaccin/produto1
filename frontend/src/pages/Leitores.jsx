@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useAcervo, saveAcervo } from "../data/acervo";
 import "./Leitores.css";
 
 // ── Helpers ───────────────────────────────────────────────
@@ -10,7 +9,6 @@ const fmtDate = (d) => {
   return `${day}/${m}/${y}`;
 };
 
-// ── Storage key for readers (separate from book acervo) ───
 const LEITORES_KEY = "acervo_leitores";
 
 function readLeitores() {
@@ -29,9 +27,9 @@ function saveLeitores(lista) {
 }
 
 const LEITORES_INICIAL = [
-  { id: 1, nome: "Ana Luiza Pereira",    cpf: "123.456.789-00", login: "ana",    data_registro: "2024-02-10" },
-  { id: 2, nome: "Carlos Eduardo Souza", cpf: "987.654.321-11", login: "carlos", data_registro: "2024-03-01" },
-  { id: 3, nome: "Juliana Ferreira",     cpf: "456.789.123-22", login: "juli",   data_registro: "2024-01-15" },
+  { id: 1, nome: "Ana Luiza Pereira",    cpf: "123.456.789-00", login: "ana",    senha: "ana123",    data_registro: "2024-02-10" },
+  { id: 2, nome: "Carlos Eduardo Souza", cpf: "987.654.321-11", login: "carlos", senha: "carlos123", data_registro: "2024-03-01" },
+  { id: 3, nome: "Juliana Ferreira",     cpf: "456.789.123-22", login: "juli",   senha: "juli123",   data_registro: "2024-01-15" },
 ];
 
 // ── Sub-components ────────────────────────────────────────
@@ -66,19 +64,42 @@ function FormField({ label, children, full }) {
   );
 }
 
+// Célula de senha com toggle mostrar/ocultar
+function SenhaCell({ senha }) {
+  const [visivel, setVisivel] = useState(false);
+  return (
+    <span className="senha-cell">
+      <code className="login-chip">
+        {visivel ? senha : "•".repeat(Math.min(senha?.length ?? 4, 10))}
+      </code>
+      <button
+        className="btn-senha-toggle"
+        onClick={() => setVisivel((v) => !v)}
+        title={visivel ? "Ocultar senha" : "Mostrar senha"}
+      >
+        {visivel ? "🙈" : "👁️"}
+      </button>
+    </span>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────
 export default function Leitores() {
-  const acervo = useAcervo(); // livros (para contar empréstimos futuramente)
+  const [leitores, setLeitores] = useState(() => readLeitores());
+  const [search,   setSearch]   = useState("");
 
-  const [leitores, setLeitores]   = useState(() => readLeitores());
-  const [search,   setSearch]     = useState("");
-  const [modal,    setModal]      = useState(false);
-  const [form,     setForm]       = useState({
-    nome: "", cpf: "", data_registro: today(), login: "", senha: "",
-  });
-  const [erro,     setErro]       = useState("");
+  // ── Modal: Cadastrar ──
+  const [modalAdd,  setModalAdd]  = useState(false);
+  const [formAdd,   setFormAdd]   = useState({ nome: "", cpf: "", data_registro: today(), login: "", senha: "" });
+  const [erroAdd,   setErroAdd]   = useState("");
 
-  // próximo id livre
+  // ── Modal: Editar login/senha ──
+  const [modalEdit, setModalEdit] = useState(false);
+  const [editando,  setEditando]  = useState(null); // leitor sendo editado
+  const [formEdit,  setFormEdit]  = useState({ login: "", senha: "", confirmar: "" });
+  const [erroEdit,  setErroEdit]  = useState("");
+  const [sucessoEdit, setSucessoEdit] = useState("");
+
   const nextId = useMemo(
     () => leitores.reduce((max, l) => Math.max(max, l.id), 0) + 1,
     [leitores]
@@ -90,38 +111,82 @@ export default function Leitores() {
         (l) =>
           !search ||
           l.nome.toLowerCase().includes(search.toLowerCase()) ||
-          l.cpf.includes(search)
+          (l.cpf && l.cpf.includes(search))
       ),
     [leitores, search]
   );
 
-  const inp = (k) => ({
-    value: form[k],
-    onChange: (e) => setForm((f) => ({ ...f, [k]: e.target.value })),
+  // ── Helpers de campo ──
+  const inpAdd  = (k) => ({
+    value: formAdd[k],
+    onChange: (e) => setFormAdd((f) => ({ ...f, [k]: e.target.value })),
+  });
+  const inpEdit = (k) => ({
+    value: formEdit[k],
+    onChange: (e) => setFormEdit((f) => ({ ...f, [k]: e.target.value })),
   });
 
+  // ── CRUD: Create ──
   function handleAdd() {
-    if (!form.nome.trim())  { setErro("⚠️ Informe o nome completo."); return; }
-    if (!form.login.trim()) { setErro("⚠️ Informe o login."); return; }
-    if (!form.senha.trim()) { setErro("⚠️ Informe a senha."); return; }
-    if (leitores.find((l) => l.login === form.login)) {
-      setErro("⚠️ Login já cadastrado."); return;
+    if (!formAdd.nome.trim())  { setErroAdd("⚠️ Informe o nome completo."); return; }
+    if (!formAdd.login.trim()) { setErroAdd("⚠️ Informe o login."); return; }
+    if (!formAdd.senha.trim()) { setErroAdd("⚠️ Informe a senha."); return; }
+    if (leitores.find((l) => l.login === formAdd.login)) {
+      setErroAdd("⚠️ Login já cadastrado."); return;
     }
     const novo = {
       id: nextId,
-      nome: form.nome.trim(),
-      cpf: form.cpf.trim(),
-      login: form.login.trim(),
-      data_registro: form.data_registro || today(),
+      nome: formAdd.nome.trim(),
+      cpf: formAdd.cpf.trim(),
+      login: formAdd.login.trim(),
+      senha: formAdd.senha,
+      data_registro: formAdd.data_registro || today(),
     };
     const novaLista = [...leitores, novo];
     setLeitores(novaLista);
     saveLeitores(novaLista);
-    setForm({ nome: "", cpf: "", data_registro: today(), login: "", senha: "" });
-    setErro("");
-    setModal(false);
+    setFormAdd({ nome: "", cpf: "", data_registro: today(), login: "", senha: "" });
+    setErroAdd("");
+    setModalAdd(false);
   }
 
+  // ── CRUD: Update ──
+  function abrirEdit(leitor) {
+    setEditando(leitor);
+    setFormEdit({ login: leitor.login, senha: leitor.senha ?? "", confirmar: "" });
+    setErroEdit("");
+    setSucessoEdit("");
+    setModalEdit(true);
+  }
+
+  function handleUpdate() {
+    setErroEdit(""); setSucessoEdit("");
+    if (!formEdit.login.trim()) { setErroEdit("⚠️ Informe o login."); return; }
+    if (!formEdit.senha.trim()) { setErroEdit("⚠️ Informe a senha."); return; }
+    if (formEdit.confirmar && formEdit.senha !== formEdit.confirmar) {
+      setErroEdit("⚠️ As senhas não coincidem."); return;
+    }
+    // Verifica duplicidade de login (exceto o próprio leitor)
+    if (
+      leitores.find(
+        (l) => l.login === formEdit.login.trim() && l.id !== editando.id
+      )
+    ) {
+      setErroEdit("⚠️ Login já usado por outro leitor."); return;
+    }
+
+    const novaLista = leitores.map((l) =>
+      l.id === editando.id
+        ? { ...l, login: formEdit.login.trim(), senha: formEdit.senha }
+        : l
+    );
+    setLeitores(novaLista);
+    saveLeitores(novaLista);
+    setSucessoEdit("✅ Dados atualizados com sucesso!");
+    setErroEdit("");
+  }
+
+  // ── CRUD: Delete ──
   function handleRemove(id) {
     if (!window.confirm("Deseja remover este leitor?")) return;
     const novaLista = leitores.filter((l) => l.id !== id);
@@ -131,6 +196,7 @@ export default function Leitores() {
 
   return (
     <section className="leitores-page">
+
       {/* Header */}
       <header className="leitores-header">
         <div>
@@ -140,7 +206,7 @@ export default function Leitores() {
         <button
           type="button"
           className="leitores-add-btn"
-          onClick={() => { setErro(""); setModal(true); }}
+          onClick={() => { setErroAdd(""); setModalAdd(true); }}
         >
           + Novo Leitor
         </button>
@@ -172,6 +238,7 @@ export default function Leitores() {
                 <th>CPF</th>
                 <th>Registro</th>
                 <th>Login</th>
+                <th>Senha</th>
                 <th>Situação</th>
                 <th>Ações</th>
               </tr>
@@ -185,15 +252,18 @@ export default function Leitores() {
                   <td data-label="Login">
                     <code className="login-chip">{l.login ?? "—"}</code>
                   </td>
+                  <td data-label="Senha">
+                    {l.senha ? <SenhaCell senha={l.senha} /> : <span style={{ color: "#aaa" }}>—</span>}
+                  </td>
                   <td data-label="Situação">
                     <Badge type="green">Regular</Badge>
                   </td>
-                  <td data-label="Ações">
-                    <button
-                      className="btn-action"
-                      onClick={() => handleRemove(l.id)}
-                    >
-                      Remover
+                  <td data-label="Ações" className="leitores-actions-cell">
+                    <button className="btn-action" onClick={() => abrirEdit(l)}>
+                      ✏️ Editar
+                    </button>
+                    <button className="btn-action btn-action-danger" onClick={() => handleRemove(l.id)}>
+                      🗑️ Remover
                     </button>
                   </td>
                 </tr>
@@ -203,33 +273,29 @@ export default function Leitores() {
         </div>
       )}
 
-      {/* Modal */}
-      <Modal
-        open={modal}
-        onClose={() => { setModal(false); setErro(""); }}
-        title="Cadastrar Leitor"
-      >
+      {/* ── Modal: Cadastrar ── */}
+      <Modal open={modalAdd} onClose={() => { setModalAdd(false); setErroAdd(""); }} title="Cadastrar Leitor">
         <div className="leitores-form-grid">
           <FormField label="Nome completo" full>
-            <input {...inp("nome")} placeholder="Nome" />
+            <input {...inpAdd("nome")} placeholder="Nome" />
           </FormField>
           <FormField label="CPF">
-            <input {...inp("cpf")} placeholder="000.000.000-00" />
+            <input {...inpAdd("cpf")} placeholder="000.000.000-00" />
           </FormField>
           <FormField label="Data de Registro">
-            <input type="date" {...inp("data_registro")} />
+            <input type="date" {...inpAdd("data_registro")} />
           </FormField>
           <FormField label="Login de acesso">
-            <input {...inp("login")} placeholder="Ex: joao.silva" />
+            <input {...inpAdd("login")} placeholder="Ex: joao.silva" />
           </FormField>
           <FormField label="Senha de acesso">
-            <input type="password" {...inp("senha")} placeholder="Senha" />
+            <input type="password" {...inpAdd("senha")} placeholder="Senha" />
           </FormField>
         </div>
 
-        {erro && (
+        {erroAdd && (
           <p className="leitores-modal-hint" style={{ color: "#8b2020", background: "#fde8e8", borderColor: "#f7c1c1" }}>
-            {erro}
+            {erroAdd}
           </p>
         )}
 
@@ -238,7 +304,7 @@ export default function Leitores() {
         </p>
 
         <div className="leitores-modal-actions">
-          <button className="btn-secondary" onClick={() => { setModal(false); setErro(""); }}>
+          <button className="btn-secondary" onClick={() => { setModalAdd(false); setErroAdd(""); }}>
             Cancelar
           </button>
           <button className="btn-primary" onClick={handleAdd}>
@@ -246,6 +312,46 @@ export default function Leitores() {
           </button>
         </div>
       </Modal>
+
+      {/* ── Modal: Editar login/senha ── */}
+      <Modal open={modalEdit} onClose={() => setModalEdit(false)} title={`Editar acesso — ${editando?.nome}`}>
+        <div className="leitores-form-grid">
+          <FormField label="Login de acesso" full>
+            <input {...inpEdit("login")} placeholder="Login" />
+          </FormField>
+          <FormField label="Nova senha">
+            <input type="password" {...inpEdit("senha")} placeholder="Nova senha" />
+          </FormField>
+          <FormField label="Confirmar senha">
+            <input type="password" {...inpEdit("confirmar")} placeholder="Repita a senha" />
+          </FormField>
+        </div>
+
+        {erroEdit   && (
+          <p className="leitores-modal-hint" style={{ color: "#8b2020", background: "#fde8e8", borderColor: "#f7c1c1" }}>
+            {erroEdit}
+          </p>
+        )}
+        {sucessoEdit && (
+          <p className="leitores-modal-hint" style={{ color: "#1a5c2a", background: "#d4edda", borderColor: "#a3d3b0" }}>
+            {sucessoEdit}
+          </p>
+        )}
+
+        <p className="leitores-modal-hint">
+          Deixe a confirmação em branco se não quiser alterar a senha.
+        </p>
+
+        <div className="leitores-modal-actions">
+          <button className="btn-secondary" onClick={() => setModalEdit(false)}>
+            Fechar
+          </button>
+          <button className="btn-primary" onClick={handleUpdate}>
+            Salvar alterações
+          </button>
+        </div>
+      </Modal>
+
     </section>
   );
 }
