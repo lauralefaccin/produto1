@@ -1,9 +1,11 @@
 import Stats from "../components/Stats";
 import Table from "../components/Table";
 import { useAuth } from "../context/AuthContext";
+import { useAcervo } from "../data/acervo";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const acervo = useAcervo();
   const primeiroNome = user?.nome?.trim().split(" ")[0] || "";
 
   return (
@@ -11,10 +13,10 @@ export default function Dashboard() {
 
 
       <div className="header">
-        <h1>
-          Bem-vindo(a) {primeiroNome ? ` ${primeiroNome}` : ""}
-        </h1>
-        <p>Visão geral do acervo e circulação.</p>
+        <h1>Bem-vindo(a){primeiroNome ? ` ${primeiroNome}` : ""}!</h1>
+        <p>
+            Veja os últimos livros adicionados e acompanhe os gêneros mais presentes.
+        </p>
       </div>
 
 

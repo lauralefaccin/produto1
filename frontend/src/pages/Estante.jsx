@@ -25,6 +25,7 @@ export default function Estante() {
       const novaLista = livrosEstante.filter((l) => l.id !== id);
       setLivrosEstante(novaLista);
       localStorage.setItem("minhaEstante", JSON.stringify(novaLista));
+      window.dispatchEvent(new CustomEvent("estante:changed"));
     }
   };
 

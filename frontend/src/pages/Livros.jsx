@@ -67,6 +67,7 @@ export default function Livros() {
 
     const novaEstante = [...estanteAtual, livro];
     localStorage.setItem("minhaEstante", JSON.stringify(novaEstante));
+    window.dispatchEvent(new CustomEvent("estante:changed"));
     alert(`${livro.titulo} foi adicionado à sua Estante!`);
   };
 

@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import logo from "../imagens/logo.png";
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
@@ -24,7 +25,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       {/* HEADER DA SIDEBAR */}
       <div className="sidebar-header">
         <h2 className="logo">
-          {collapsed ? "📚" : "AtlasBook"}
+          {collapsed ? (
+            <img src={logo} alt="AtlasBook" className="logo-image" />
+          ) : (
+            "AtlasBook"
+          )}
         </h2>
         <button
           className="toggle"

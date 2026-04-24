@@ -1,34 +1,70 @@
+import { useState, useEffect, useMemo } from "react";
+import { useAcervo } from "../data/acervo";
+import { useGeneros } from "../data/generos";
+
 export default function Stats() {
+  const acervo = useAcervo();
+  const generos = useGeneros();
+  const [estanteCount, setEstanteCount] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return JSON.parse(window.localStorage.getItem("minhaEstante") || "[]").length;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const updateEstanteCount = () => {
+      setEstanteCount(
+        JSON.parse(window.localStorage.getItem("minhaEstante") || "[]").length
+      );
+    };
+
+    window.addEventListener("estante:changed", updateEstanteCount);
+    window.addEventListener("storage", updateEstanteCount);
+
+    return () => {
+      window.removeEventListener("estante:changed", updateEstanteCount);
+      window.removeEventListener("storage", updateEstanteCount);
+    };
+  }, []);
+
+  const uniqueAuthors = useMemo(
+    () => Array.from(new Set(acervo.map((livro) => livro.autor))).length,
+    [acervo]
+  );
+
   const statsData = [
     {
       title: "Títulos",
-      value: 5,
+      value: acervo.length,
       icon: "📚",
     },
     {
       title: "Exemplares",
-      value: 17,
+      value: acervo.length,
       icon: "📦",
     },
     {
-      title: "Leitores",
-      value: 3,
+      title: "Gêneros",
+      value: generos.length,
+      icon: "🏷️",
+    },
+    {
+      title: "Autores",
+      value: uniqueAuthors,
       icon: "👤",
     },
     {
-      title: "Em empréstimo",
-      value: 1,
-      icon: "📄",
+      title: "Minha Estante",
+      value: estanteCount,
+      icon: "🔖",
     },
     {
-      title: "Reservas",
-      value: 1,
-      icon: "📌",
-    },
-    {
-      title: "Multas",
-      value: 0,
-      icon: "⚠️",
+      title: "Último adicionado",
+      value: acervo.length > 0 ? acervo[acervo.length - 1].titulo : "Nenhum livro",
+      icon: "✨",
     },
   ];
 
