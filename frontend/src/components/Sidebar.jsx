@@ -29,8 +29,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         <button
           className="toggle"
           onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? "Abrir menu" : "Fechar menu"}
         >
-          {collapsed ? "➡️" : "⬅️"}
+          ☰
         </button>
       </div>
 

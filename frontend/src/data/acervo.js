@@ -12,8 +12,6 @@ const ACERVO_INICIAL = [
     nacionalidade: "Espanhol",
     editora: "Penguin",
     ano: 1605,
-    exemplares: 3,
-    isbn: "978-0142437230",
   },
   {
     id: 2,
@@ -23,8 +21,6 @@ const ACERVO_INICIAL = [
     nacionalidade: "Brasileiro",
     editora: "Ática",
     ano: 1890,
-    exemplares: 4,
-    isbn: "978-8508151172",
   },
   {
     id: 3,
@@ -34,8 +30,6 @@ const ACERVO_INICIAL = [
     nacionalidade: "Britânico",
     editora: "Companhia das Letras",
     ano: 1949,
-    exemplares: 2,
-    isbn: "978-8535914849",
   },
   {
     id: 4,
@@ -45,8 +39,6 @@ const ACERVO_INICIAL = [
     nacionalidade: "Brasileiro",
     editora: "Nova Fronteira",
     ano: 1956,
-    exemplares: 3,
-    isbn: "978-8520923252",
   },
   {
     id: 5,
@@ -56,8 +48,6 @@ const ACERVO_INICIAL = [
     nacionalidade: "Britânico",
     editora: "Rocco",
     ano: 1997,
-    exemplares: 5,
-    isbn: "978-8532511010",
   },
 ];
 

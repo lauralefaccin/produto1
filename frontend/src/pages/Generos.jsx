@@ -1,12 +1,29 @@
 import { useMemo, useState } from "react";
 import "./Livros.css";
-import { GENEROS, getGeneroColor, normalizarGenero } from "../data/generos";
-import { useAcervo } from "../data/acervo";
+import {
+  GENEROS,
+  getGeneroColor,
+  loadGeneros,
+  saveGeneros,
+  normalizarGenero,
+} from "../data/generos";
+import { saveAcervo, useAcervo } from "../data/acervo";
+import { useAuth } from "../context/AuthContext";
+
+const initialGeneroForm = {
+  nome: "",
+  descricao: "",
+  cor: "",
+};
 
 export default function Generos() {
   const acervo = useAcervo();
   const [busca, setBusca] = useState("");
   const [modo, setModo] = useState("cards");
+  const [generos, setGeneros] = useState(() => loadGeneros());
+  const [formAberto, setFormAberto] = useState(false);
+  const [editandoGenero, setEditandoGenero] = useState(null);
+  const [formGenero, setFormGenero] = useState(initialGeneroForm);
 
   const livrosPorGenero = useMemo(() => {
     return acervo.reduce((acc, livro) => {
@@ -16,18 +33,95 @@ export default function Generos() {
     }, {});
   }, [acervo]);
 
+  const { user } = useAuth();
+  const isBibliotecario = user?.tipo === "bibliotecario";
+
   const generosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
 
     if (!termo) {
-      return GENEROS;
+      return generos;
     }
 
-    return GENEROS.filter((item) => {
+    return generos.filter((item) => {
       const alvo = `${item.nome} ${item.descricao}`.toLowerCase();
       return alvo.includes(termo);
     });
-  }, [busca]);
+  }, [busca, generos]);
+
+  const abrirAdicionarGenero = () => {
+    setFormGenero(initialGeneroForm);
+    setEditandoGenero(null);
+    setFormAberto(true);
+  };
+
+  const abrirEditarGenero = (item) => {
+    setFormGenero({
+      nome: item.nome,
+      descricao: item.descricao,
+      cor: item.cor || "",
+    });
+    setEditandoGenero(item.nome);
+    setFormAberto(true);
+  };
+
+  const cancelarFormulario = () => {
+    setFormGenero(initialGeneroForm);
+    setEditandoGenero(null);
+    setFormAberto(false);
+  };
+
+  const salvarGenero = () => {
+    const nome = formGenero.nome.trim();
+    const descricao = formGenero.descricao.trim();
+    const cor = formGenero.cor.trim();
+
+    if (!nome || !descricao) {
+      alert("Preencha nome e descrição do gênero.");
+      return;
+    }
+
+    const existeOutro = generos.some(
+      (item) => item.nome.toLowerCase() === nome.toLowerCase() && item.nome !== editandoGenero
+    );
+
+    if (existeOutro) {
+      alert("Já existe um gênero com esse nome.");
+      return;
+    }
+
+    const novoGenero = { nome, descricao, cor };
+    const generosAtualizados = editandoGenero
+      ? generos.map((item) => (item.nome === editandoGenero ? novoGenero : item))
+      : [...generos, novoGenero];
+
+    setGeneros(generosAtualizados);
+    saveGeneros(generosAtualizados);
+
+    if (editandoGenero && editandoGenero !== nome) {
+      saveAcervo(
+        acervo.map((livro) =>
+          livro.genero === editandoGenero ? { ...livro, genero: nome } : livro
+        )
+      );
+    }
+
+    cancelarFormulario();
+  };
+
+  const excluirGenero = (item) => {
+    if (!window.confirm(`Deseja excluir o gênero "${item.nome}"?`)) {
+      return;
+    }
+
+    const generosAtuais = generos.filter((genero) => genero.nome !== item.nome);
+    setGeneros(generosAtuais);
+    saveGeneros(generosAtuais);
+
+    if (editandoGenero === item.nome) {
+      cancelarFormulario();
+    }
+  };
 
   return (
     <section className="livros-page">
@@ -37,9 +131,11 @@ export default function Generos() {
           <h1>Gêneros</h1>
         </div>
 
-        <button type="button" className="livros-add-btn">
-          + Adicionar Gênero
-        </button>
+        {isBibliotecario && (
+          <button type="button" className="livros-add-btn" onClick={abrirAdicionarGenero}>
+            + Adicionar Gênero
+          </button>
+        )}
       </header>
 
       <div className="livros-filters">
@@ -68,13 +164,56 @@ export default function Generos() {
         </select>
       </div>
 
+      {formAberto && (
+        <>
+          <div className="modal-backdrop" onClick={cancelarFormulario} />
+          <section className="livros-form-panel modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="livros-form-grid">
+              <label>
+                Nome
+                <input
+                  value={formGenero.nome}
+                  onChange={(event) => setFormGenero((prev) => ({ ...prev, nome: event.target.value }))}
+                  placeholder="Nome do gênero"
+                />
+              </label>
+              <label>
+                Cor
+                <input
+                  type="color"
+                  value={formGenero.cor}
+                  onChange={(event) => setFormGenero((prev) => ({ ...prev, cor: event.target.value }))}
+                  placeholder="Cor (hex)"
+                />
+              </label>
+              <label style={{ gridColumn: "1 / -1" }}>
+                Descrição
+                <input
+                  value={formGenero.descricao}
+                  onChange={(event) => setFormGenero((prev) => ({ ...prev, descricao: event.target.value }))}
+                  placeholder="Descrição do gênero"
+                />
+              </label>
+            </div>
+            <div className="livros-form-actions">
+              <button type="button" className="btn-add-estante-list" onClick={salvarGenero}>
+                {editandoGenero ? "Salvar alterações" : "Salvar gênero"}
+              </button>
+              <button type="button" className="btn-delete" onClick={cancelarFormulario}>
+                Cancelar
+              </button>
+            </div>
+          </section>
+        </>
+      )}
+
       {modo === "cards" && (
         <div className="livros-grid">
           {generosFiltrados.map((item) => (
             <article
               key={item.nome}
               className="livro-card"
-              style={{ "--livro-accent": getGeneroColor(item.nome) }}
+              style={{ "--livro-accent": item.cor || getGeneroColor(item.nome) }}
             >
               <h3>{item.nome}</h3>
               <p className="livro-autor">{item.descricao}</p>
@@ -83,6 +222,17 @@ export default function Generos() {
                 <p>Livros no acervo</p>
                 <p>{livrosPorGenero[item.nome] || 0}</p>
               </div>
+
+              {isBibliotecario && (
+                <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+                  <button type="button" className="btn-add-estante-list" onClick={() => abrirEditarGenero(item)}>
+                    Editar
+                  </button>
+                  <button type="button" className="btn-delete" onClick={() => excluirGenero(item)}>
+                    Excluir
+                  </button>
+                </div>
+              )}
             </article>
           ))}
         </div>
@@ -94,11 +244,21 @@ export default function Generos() {
             <article
               key={item.nome}
               className="livro-row"
-              style={{ "--livro-accent": getGeneroColor(item.nome) }}
+              style={{ "--livro-accent": item.cor || getGeneroColor(item.nome) }}
             >
               <div>
                 <h3>{item.nome}</h3>
                 <p className="livro-autor">{item.descricao}</p>
+                {isBibliotecario && (
+                  <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
+                    <button type="button" className="btn-add-estante-list" onClick={() => abrirEditarGenero(item)}>
+                      Editar
+                    </button>
+                    <button type="button" className="btn-delete" onClick={() => excluirGenero(item)}>
+                      Excluir
+                    </button>
+                  </div>
+                )}
               </div>
               <p>Livros no acervo</p>
               <p>{livrosPorGenero[item.nome] || 0}</p>

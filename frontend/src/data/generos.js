@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 export const GENEROS = [
   {
     nome: "Clássico",
@@ -38,4 +40,54 @@ export const GENERO_COR_MAP = {
 
 export function getGeneroColor(genero) {
   return GENERO_COR_MAP[normalizarGenero(genero)] || "#c08928";
+}
+
+const STORAGE_KEY = "acervo_generos";
+const GENEROS_CHANGED_EVENT = "generos:changed";
+
+export function loadGeneros() {
+  if (typeof window === "undefined") {
+    return GENEROS;
+  }
+
+  const salvo = window.localStorage.getItem(STORAGE_KEY);
+  if (!salvo) {
+    return GENEROS;
+  }
+
+  try {
+    const parsed = JSON.parse(salvo);
+    return Array.isArray(parsed) ? parsed : GENEROS;
+  } catch {
+    return GENEROS;
+  }
+}
+
+export function saveGeneros(generos) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(generos));
+  window.dispatchEvent(new CustomEvent(GENEROS_CHANGED_EVENT));
+}
+
+export function useGeneros() {
+  const [generos, setGeneros] = useState(() => loadGeneros());
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const syncGeneros = () => setGeneros(loadGeneros());
+
+    window.addEventListener(GENEROS_CHANGED_EVENT, syncGeneros);
+
+    return () => {
+      window.removeEventListener(GENEROS_CHANGED_EVENT, syncGeneros);
+    };
+  }, []);
+
+  return generos;
 }

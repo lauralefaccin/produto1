@@ -1,15 +1,24 @@
 import { useState, useEffect } from "react";
-import { getGeneroColor } from "../data/generos";
+import { getGeneroColor, useGeneros } from "../data/generos";
 import "./Livros.css"; // Reaproveitando os estilos
 
 export default function Estante() {
   const [livrosEstante, setLivrosEstante] = useState([]);
+  const generos = useGeneros();
 
   // Carrega os livros salvos ao abrir a página
   useEffect(() => {
     const salvos = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
     setLivrosEstante(salvos);
   }, []);
+
+  const getCorGenero = (generoNome) => {
+    const generoCustomizado = generos.find(g => g.nome === generoNome);
+    if (generoCustomizado?.cor) {
+      return generoCustomizado.cor;
+    }
+    return getGeneroColor(generoNome);
+  };
 
   const removerDaEstante = (id) => {
     if (window.confirm("Deseja remover este livro da sua estante?")) {
@@ -38,7 +47,7 @@ export default function Estante() {
             <article
               key={livro.id}
               className="livro-card"
-              style={{ "--livro-accent": getGeneroColor(livro.genero) }}
+              style={{ "--livro-accent": getCorGenero(livro.genero) }}
             >
               <div className="livro-card-header">
                 <p className="livro-genero">{livro.genero}</p>

@@ -64,25 +64,6 @@ function FormField({ label, children, full }) {
   );
 }
 
-// Célula de senha com toggle mostrar/ocultar
-function SenhaCell({ senha }) {
-  const [visivel, setVisivel] = useState(false);
-  return (
-    <span className="senha-cell">
-      <code className="login-chip">
-        {visivel ? senha : "•".repeat(Math.min(senha?.length ?? 4, 10))}
-      </code>
-      <button
-        className="btn-senha-toggle"
-        onClick={() => setVisivel((v) => !v)}
-        title={visivel ? "Ocultar senha" : "Mostrar senha"}
-      >
-        {visivel ? "🙈" : "👁️"}
-      </button>
-    </span>
-  );
-}
-
 // ── Main page ──────────────────────────────────────────────
 export default function Leitores() {
   const [leitores, setLeitores] = useState(() => readLeitores());
@@ -238,7 +219,6 @@ export default function Leitores() {
                 <th>CPF</th>
                 <th>Registro</th>
                 <th>Login</th>
-                <th>Senha</th>
                 <th>Situação</th>
                 <th>Ações</th>
               </tr>
@@ -251,9 +231,6 @@ export default function Leitores() {
                   <td data-label="Registro">{fmtDate(l.data_registro)}</td>
                   <td data-label="Login">
                     <code className="login-chip">{l.login ?? "—"}</code>
-                  </td>
-                  <td data-label="Senha">
-                    {l.senha ? <SenhaCell senha={l.senha} /> : <span style={{ color: "#aaa" }}>—</span>}
                   </td>
                   <td data-label="Situação">
                     <Badge type="green">Regular</Badge>

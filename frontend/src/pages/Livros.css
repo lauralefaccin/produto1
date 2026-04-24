@@ -56,6 +56,67 @@
   border-bottom: 1px solid #e4d8c4;
 }
 
+.livros-form-panel {
+  background: #fff;
+  border: 1px solid #e4d8c4;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 20px rgba(22, 14, 6, 0.06);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(21, 16, 10, 0.34);
+  z-index: 30;
+}
+
+.modal-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 700px);
+  max-height: min(90vh, 780px);
+  overflow-y: auto;
+  z-index: 31;
+}
+
+.livros-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.livros-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #6f5f49;
+  font-size: 13px;
+}
+
+.livros-form-grid input {
+  border: 1px solid #dfd1ba;
+  border-radius: 12px;
+  background: #fff;
+  color: #3f311f;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.livros-form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.livros-form-actions .btn-delete {
+  background: #fff;
+}
+
 .livros-search {
   display: flex;
   align-items: center;
@@ -140,6 +201,20 @@
 .livro-meta p:last-child {
   font-weight: 700;
   color: #42584a;
+}
+
+.livro-card-actions,
+.livro-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.livro-meta-row {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #7b6e5a;
 }
 
 .livros-lista {
@@ -228,8 +303,8 @@
   font-size: 1.2rem;
   cursor: pointer;
   padding: 0;
-  transition: transform 0.2s;
-  opacity: 0.6;
+  transition: transform 0.2s, opacity 0.2s;
+  opacity: 0.7;
 }
 
 .btn-add-estante:hover {
@@ -237,27 +312,27 @@
   opacity: 1;
 }
 
-.btn-add-estante-list {
-  background: #f4f4f4;
-  border: 1px solid #ddd;
+.btn-add-estante-list,
+.btn-action-small,
+.livros-page .btn-delete {
+  background: #fff;
+  border: 1px solid #d4c2a0;
+  color: #3f311f;
   padding: 5px 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.2s, transform 0.2s, border-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-.btn-delete {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  opacity: 0.5;
-  transition: 0.2s;
-}
-
-.btn-delete:hover {
-  opacity: 1;
-  color: #e74c3c;
+.btn-add-estante-list:hover,
+.btn-action-small:hover,
+.livros-page .btn-delete:hover {
+  background: #f7f2e6;
+  border-color: #c89e43;
+  transform: translateY(-1px);
 }
 
 .btn-ler {
