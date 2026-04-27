@@ -1,6 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAcervo } from "../data/acervo";
 import { useGeneros } from "../data/generos";
+import tituloIcon from "../imagens/icons/livro.png";
+import estrelasIcon from "../imagens/icons/estrela.png";
+import coracaoIcon from "../imagens/icons/coracao.png";
+import estanteIcon from "../imagens/icons/estante (2).png";
+import autoresIcon from "../imagens/icons/autores.png";
 
 export default function Stats() {
   const acervo = useAcervo();
@@ -39,7 +44,7 @@ export default function Stats() {
     {
       title: "Títulos",
       value: acervo.length,
-      icon: "📚",
+      iconUrl: tituloIcon,
     },
     {
       title: "Exemplares",
@@ -49,22 +54,22 @@ export default function Stats() {
     {
       title: "Gêneros",
       value: generos.length,
-      icon: "🏷️",
+      iconUrl: coracaoIcon,
     },
     {
       title: "Autores",
       value: uniqueAuthors,
-      icon: "👤",
+      iconUrl: autoresIcon,
     },
     {
       title: "Minha Estante",
       value: estanteCount,
-      icon: "🔖",
+      iconUrl: estanteIcon,
     },
     {
       title: "Último adicionado",
       value: acervo.length > 0 ? acervo[acervo.length - 1].titulo : "Nenhum livro",
-      icon: "✨",
+      iconUrl: estrelasIcon,
     },
   ];
 
@@ -74,7 +79,11 @@ export default function Stats() {
         <div key={index} className="card">
           
           <div className="icon">
-            {item.icon}
+            {item.iconUrl ? (
+              <img src={item.iconUrl} alt={`${item.title} icon`} />
+            ) : (
+              item.icon
+            )}
           </div>
 
           <h2 className="value">

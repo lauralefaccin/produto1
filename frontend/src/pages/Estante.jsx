@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getGeneroColor, useGeneros } from "../data/generos";
 import "./Livros.css"; // Reaproveitando os estilos
+import lixeiraIcon from "../imagens/icons/lixeira.png";
 
 export default function Estante() {
   const [livrosEstante, setLivrosEstante] = useState([]);
@@ -53,7 +54,7 @@ export default function Estante() {
               <div className="livro-card-header">
                 <p className="livro-genero">{livro.genero}</p>
                 <button className="btn-delete" onClick={() => removerDaEstante(livro.id)}>
-                  🗑️
+                  <img src={lixeiraIcon} alt="Remover da estante" />
                 </button>
               </div>
               <h3>{livro.titulo}</h3>
@@ -61,7 +62,7 @@ export default function Estante() {
               
               <div className="livro-meta">
                 <button className="btn-ler" onClick={() => alert("Abrindo leitor...")}>
-                  📖 Ler Livro
+                  Ler Livro
                 </button>
               </div>
             </article>

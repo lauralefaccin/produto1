@@ -1,6 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import logo from "../imagens/logo.png";
+import inicioIcon from "../imagens/icons/inicio.png";
+import tituloMenuIcon from "../imagens/icons/livro_branco.png";
+import autoresMenuIcon from "../imagens/icons/autores_branco.png";
+import estanteMenuIcon from "../imagens/icons/estante_branca (2).png";
+import generosMenuIcon from "../imagens/icons/coracao_branco.png";
+import sairIcon from "../imagens/icons/sair_branco.png";
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
@@ -9,14 +15,14 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const logout = auth?.logout;
 
   const menu = [
-    { path: "/", label: "Início", icon: "🏠" },
-    { path: "/livros", label: "Livros", icon: "📚" },
+    { path: "/", label: "Início", iconUrl: inicioIcon },
+    { path: "/livros", label: "Livros", iconUrl: tituloMenuIcon },
     // Leitores só aparece para bibliotecários
     ...(user?.tipo === "bibliotecario"
-      ? [{ path: "/leitores", label: "Leitores", icon: "👤" }]
+      ? [{ path: "/leitores", label: "Leitores", iconUrl: autoresMenuIcon }]
       : []),
-    { path: "/estante", label: "Estante", icon: "🔖" },
-    { path: "/generos", label: "Gêneros", icon: "🏷️" },
+    { path: "/estante", label: "Estante", iconUrl: estanteMenuIcon },
+    { path: "/generos", label: "Gêneros", iconUrl: generosMenuIcon },
   ];
 
   return (
@@ -48,7 +54,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             to={item.path}
             className={location.pathname === item.path ? "active" : ""}
           >
-            <span className="menu-icon">{item.icon}</span>
+            <span className="menu-icon">
+              {item.iconUrl ? <img src={item.iconUrl} alt={item.label} /> : item.icon}
+            </span>
             {!collapsed && <span>{item.label}</span>}
           </Link>
         ))}
@@ -64,7 +72,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             marginBottom: "10px",
           }}>
             <p style={{ margin: 0, fontSize: 11, color: "#c8922a", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
-              {user.tipo === "bibliotecario" ? "🏛️ Bibliotecário" : "📖 Leitor"}
+              {user.tipo === "bibliotecario" ? "Bibliotecário" : "Leitor"}
             </p>
             <p style={{ margin: "4px 0 0", fontSize: 13, color: "#f0d080", fontWeight: 500 }}>
               {user.nome}
@@ -98,7 +106,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           onMouseEnter={(e) => e.currentTarget.style.background = "rgba(200,146,42,0.1)"}
           onMouseLeave={(e) => e.currentTarget.style.background = "none"}
         >
-          <span>🚪</span>
+          <span><img src={sairIcon} alt="Sair" className="logout-icon" /></span>
           {!collapsed && <span>Sair</span>}
         </button>
       </div>

@@ -3,6 +3,7 @@ import "./Livros.css";
 import { GENEROS, getGeneroColor, useGeneros, loadGeneros } from "../data/generos";
 import { saveAcervo, useAcervo } from "../data/acervo";
 import { useAuth } from "../context/AuthContext";
+import estanteIcon from "../imagens/icons/estante (2).png";
 
 export default function Livros() {
   const acervo = useAcervo();
@@ -252,7 +253,7 @@ export default function Livros() {
                   onClick={(e) => adicionarAEstante(livro, e)}
                   title="Salvar na Estante"
                 >
-                  🔖
+                  <img src={estanteIcon} alt="Salvar na Estante" />
                 </button>
               </div>
               <h3>{livro.titulo}</h3>
@@ -319,7 +320,7 @@ export default function Livros() {
                 className="btn-add-estante-list" 
                 onClick={(e) => adicionarAEstante(livro, e)}
               >
-                🔖 Salvar
+                <img src={estanteIcon} alt="Salvar na Estante" /> Salvar
               </button>
             </article>
           ))}

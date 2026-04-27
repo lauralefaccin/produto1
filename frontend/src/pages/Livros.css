@@ -307,16 +307,29 @@
   opacity: 0.7;
 }
 
+.btn-add-estante img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 .btn-add-estante:hover {
   transform: scale(1.2);
   opacity: 1;
 }
 
+.btn-add-estante-list img,
+.btn-delete img {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}
+
 .btn-add-estante-list,
 .btn-action-small,
 .livros-page .btn-delete {
-  background: #fff;
-  border: 1px solid #d4c2a0;
+  background: none;
+  border: none;
   color: #3f311f;
   padding: 5px 10px;
   border-radius: 8px;
@@ -324,14 +337,17 @@
   font-size: 12px;
   font-weight: 600;
   transition: background 0.2s, transform 0.2s, border-color 0.2s;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .btn-add-estante-list:hover,
 .btn-action-small:hover,
 .livros-page .btn-delete:hover {
-  background: #f7f2e6;
-  border-color: #c89e43;
+  background: none;
+  border: none;
   transform: translateY(-1px);
 }
 
