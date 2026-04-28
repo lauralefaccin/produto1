@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
+import { loadAutores } from "./autores";
 
 const STORAGE_KEY = "acervo_livros";
 const ACERVO_CHANGED_EVENT = "acervo:changed";
+
+function normalizeLivro(livro, autores) {
+  const autorId = livro.autorId || autores.find((autor) => autor.nome === livro.autor)?.id || null;
+  return {
+    ...livro,
+    autorId,
+    autor: livro.autor || "",
+  };
+}
 
 const ACERVO_INICIAL = [
   {
@@ -56,17 +66,20 @@ function readAcervo() {
     return ACERVO_INICIAL;
   }
 
+  const autores = loadAutores();
   const salvo = window.localStorage.getItem(STORAGE_KEY);
 
   if (!salvo) {
-    return ACERVO_INICIAL;
+    return ACERVO_INICIAL.map((livro) => normalizeLivro(livro, autores));
   }
 
   try {
     const parsed = JSON.parse(salvo);
-    return Array.isArray(parsed) ? parsed : ACERVO_INICIAL;
+    return Array.isArray(parsed)
+      ? parsed.map((livro) => normalizeLivro(livro, autores))
+      : ACERVO_INICIAL.map((livro) => normalizeLivro(livro, autores));
   } catch {
-    return ACERVO_INICIAL;
+    return ACERVO_INICIAL.map((livro) => normalizeLivro(livro, autores));
   }
 }
 

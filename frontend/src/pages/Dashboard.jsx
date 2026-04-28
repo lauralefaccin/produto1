@@ -13,7 +13,13 @@ export default function Dashboard() {
 
 
       <div className="header">
-        <h1>Bem-vindo(a){primeiroNome ? ` ${primeiroNome}` : ""}!</h1>
+        <h1>
+          Bem-vindo(a)
+          {primeiroNome && (
+            <> <span className="dashboard-highlight">{primeiroNome}</span></>
+          )}
+          !
+        </h1>
         <p>
             Veja os últimos livros adicionados e acompanhe os gêneros mais presentes.
         </p>

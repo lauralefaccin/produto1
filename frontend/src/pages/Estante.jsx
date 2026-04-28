@@ -1,17 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getGeneroColor, useGeneros } from "../data/generos";
+import { useAcervo } from "../data/acervo";
 import "./Livros.css"; // Reaproveitando os estilos
 import lixeiraIcon from "../imagens/icons/lixeira.png";
 
+function loadEstanteIds() {
+  if (typeof window === "undefined") return [];
+  const saved = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
+  if (!Array.isArray(saved)) return [];
+  return saved
+    .map((item) => (typeof item === "number" ? item : item?.id))
+    .filter(Boolean);
+}
+
 export default function Estante() {
-  const [livrosEstante, setLivrosEstante] = useState([]);
+  const [estanteIds, setEstanteIds] = useState(() => loadEstanteIds());
+  const acervo = useAcervo();
   const generos = useGeneros();
 
-  // Carrega os livros salvos ao abrir a página
+  const livrosEstante = useMemo(
+    () => acervo.filter((livro) => estanteIds.includes(livro.id)),
+    [acervo, estanteIds]
+  );
+
   useEffect(() => {
-    const salvos = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
-    setLivrosEstante(salvos);
-  }, []);
+    setEstanteIds(loadEstanteIds());
+  }, [acervo]);
 
   const getCorGenero = (generoNome) => {
     const generoCustomizado = generos.find(g => g.nome === generoNome);
@@ -22,12 +36,13 @@ export default function Estante() {
   };
 
   const removerDaEstante = (id) => {
-    if (window.confirm("Deseja remover este livro da sua estante?")) {
-      const novaLista = livrosEstante.filter((l) => l.id !== id);
-      setLivrosEstante(novaLista);
-      localStorage.setItem("minhaEstante", JSON.stringify(novaLista));
-      window.dispatchEvent(new CustomEvent("estante:changed"));
+    if (!window.confirm("Tem certeza de que deseja remover este livro da estante? Esta ação não pode ser desfeita.")) {
+      return;
     }
+    const novaIds = estanteIds.filter((livroId) => livroId !== id);
+    setEstanteIds(novaIds);
+    localStorage.setItem("minhaEstante", JSON.stringify(novaIds));
+    window.dispatchEvent(new CustomEvent("estante:changed"));
   };
 
   return (

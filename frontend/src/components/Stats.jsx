@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAcervo } from "../data/acervo";
+import { useAutores } from "../data/autores";
 import { useGeneros } from "../data/generos";
 import tituloIcon from "../imagens/icons/livro.png";
 import estrelasIcon from "../imagens/icons/estrela.png";
@@ -10,6 +11,7 @@ import autoresIcon from "../imagens/icons/autores.png";
 export default function Stats() {
   const acervo = useAcervo();
   const generos = useGeneros();
+  const autores = useAutores();
   const [estanteCount, setEstanteCount] = useState(() => {
     if (typeof window === "undefined") return 0;
     return JSON.parse(window.localStorage.getItem("minhaEstante") || "[]").length;
@@ -35,10 +37,7 @@ export default function Stats() {
     };
   }, []);
 
-  const uniqueAuthors = useMemo(
-    () => Array.from(new Set(acervo.map((livro) => livro.autor))).length,
-    [acervo]
-  );
+  const totalAutores = autores.length;
 
   const statsData = [
     {
@@ -47,18 +46,13 @@ export default function Stats() {
       iconUrl: tituloIcon,
     },
     {
-      title: "Exemplares",
-      value: acervo.length,
-      icon: "📦",
-    },
-    {
       title: "Gêneros",
       value: generos.length,
       iconUrl: coracaoIcon,
     },
     {
       title: "Autores",
-      value: uniqueAuthors,
+      value: totalAutores,
       iconUrl: autoresIcon,
     },
     {

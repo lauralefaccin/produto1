@@ -128,10 +128,21 @@ body {
 
 /* HEADER (dashboard) */
 .header {
-  background: #1a0f05;
+  background: #2f1f08;
   color: white;
   padding: 25px;
   border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(44, 31, 18, 0.16);
+}
+
+.header p {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.dashboard-highlight {
+  color: #d8a336;
+  font-size: 1.06em;
+  font-weight: 700;
 }
 
 .layout {
@@ -193,6 +204,7 @@ body {
 
 .header span {
   color: orange;
+  font-weight: bold; 
 }
 
 /* STATS */
@@ -281,7 +293,11 @@ td:last-child {
   margin-bottom: 30px;
 }
 
-.estante-header span { color: #b8860b; font-weight: bold; font-size: 12px; }
+.estante-header span { 
+  color: #b8860b; 
+  font-weight: bold; 
+  font-size: 12px; 
+}
 
 .view-toggle {
   display: flex;

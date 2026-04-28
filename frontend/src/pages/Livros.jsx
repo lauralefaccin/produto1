@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import "./Livros.css";
-import { GENEROS, getGeneroColor, useGeneros, loadGeneros } from "../data/generos";
+import { GENEROS, getGeneroColor, useGeneros } from "../data/generos";
 import { saveAcervo, useAcervo } from "../data/acervo";
+import { useAutores } from "../data/autores";
 import { useAuth } from "../context/AuthContext";
 import estanteIcon from "../imagens/icons/estante (2).png";
 
 export default function Livros() {
   const acervo = useAcervo();
+  const autores = useAutores();
   const generos = useGeneros();
   const [busca, setBusca] = useState("");
   const [genero, setGenero] = useState("Todos os gêneros");
@@ -18,7 +20,8 @@ export default function Livros() {
   const initialForm = {
     genero: "",
     titulo: "",
-    autor: "",
+    autorId: "",
+    autorNome: "",
     nacionalidade: "",
     editora: "",
     ano: "",
@@ -29,17 +32,27 @@ export default function Livros() {
   const [editandoId, setEditandoId] = useState(null);
 
   const getCorGenero = (generoNome) => {
-    const generoCustomizado = generos.find(g => g.nome === generoNome);
+    const generoCustomizado = generos.find((g) => g.nome === generoNome);
     if (generoCustomizado?.cor) {
       return generoCustomizado.cor;
     }
     return getGeneroColor(generoNome);
   };
 
+  const autoresMap = useMemo(
+    () => Object.fromEntries(autores.map((autor) => [autor.id, autor.nome])),
+    [autores]
+  );
+
   const generosOptions = useMemo(
     () => ["Todos os gêneros", ...generos.map((g) => g.nome)],
     [generos]
   );
+
+  const getAutorNome = (livro) => {
+    const autorId = Number(livro.autorId);
+    return autoresMap[autorId] || livro.autor || "";
+  };
 
   const livrosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -47,10 +60,11 @@ export default function Livros() {
       const atendeGenero = genero === "Todos os gêneros" || livro.genero === genero;
       if (!atendeGenero) return false;
       if (!termo) return true;
-      const alvoBusca = `${livro.titulo} ${livro.autor}`.toLowerCase();
+      const autorNome = getAutorNome(livro);
+      const alvoBusca = `${livro.titulo} ${autorNome}`.toLowerCase();
       return alvoBusca.includes(termo);
     });
-  }, [busca, genero, acervo]);
+  }, [busca, genero, acervo, autoresMap]);
 
   // FUNÇÃO PARA SALVAR NA ESTANTE
   const adicionarAEstante = (livro, e) => {
@@ -60,13 +74,16 @@ export default function Livros() {
     }
     
     const estanteAtual = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
-    
-    if (estanteAtual.find((item) => item.id === livro.id)) {
+    const ids = Array.isArray(estanteAtual)
+      ? estanteAtual.map((item) => (typeof item === "number" ? item : item?.id)).filter(Boolean)
+      : [];
+
+    if (ids.includes(livro.id)) {
       alert("Este livro já está na sua estante!");
       return;
     }
 
-    const novaEstante = [...estanteAtual, livro];
+    const novaEstante = [...ids, livro.id];
     localStorage.setItem("minhaEstante", JSON.stringify(novaEstante));
     window.dispatchEvent(new CustomEvent("estante:changed"));
     alert(`${livro.titulo} foi adicionado à sua Estante!`);
@@ -82,7 +99,8 @@ export default function Livros() {
     setFormLivro({
       genero: livro.genero || "",
       titulo: livro.titulo || "",
-      autor: livro.autor || "",
+      autorId: livro.autorId?.toString() || "",
+      autorNome: getAutorNome(livro),
       nacionalidade: livro.nacionalidade || "",
       editora: livro.editora || "",
       ano: livro.ano?.toString() || "",
@@ -98,15 +116,24 @@ export default function Livros() {
   };
 
   const salvarLivro = () => {
-    if (!formLivro.titulo.trim() || !formLivro.autor.trim() || !formLivro.genero.trim()) {
+    if (!formLivro.titulo.trim() || !formLivro.autorId || !formLivro.genero.trim()) {
       alert("Preencha pelo menos título, autor e gênero.");
+      return;
+    }
+
+    const autorId = Number(formLivro.autorId);
+    const autorNome = autoresMap[autorId] || formLivro.autorNome.trim();
+
+    if (!autorId || !autorNome) {
+      alert("Selecione um autor válido existente.");
       return;
     }
 
     const livroFormatado = {
       ...formLivro,
       titulo: formLivro.titulo.trim(),
-      autor: formLivro.autor.trim(),
+      autorId,
+      autor: autorNome,
       genero: formLivro.genero.trim(),
       nacionalidade: formLivro.nacionalidade.trim(),
       editora: formLivro.editora.trim(),
@@ -122,8 +149,16 @@ export default function Livros() {
   };
 
   const excluirLivro = (livro) => {
-    if (!window.confirm(`Deseja excluir "${livro.titulo}"?`)) return;
+    if (!window.confirm(`Tem certeza de que deseja excluir "${livro.titulo}"? Esta ação removerá o livro de todas as páginas, incluindo a Estante de leitores.`)) {
+      return;
+    }
     saveAcervo(acervo.filter((item) => item.id !== livro.id));
+    const estanteAtual = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
+    const novaIds = Array.isArray(estanteAtual)
+      ? estanteAtual.map((item) => (typeof item === "number" ? item : item?.id)).filter(Boolean).filter((id) => id !== livro.id)
+      : [];
+    localStorage.setItem("minhaEstante", JSON.stringify(novaIds));
+    window.dispatchEvent(new CustomEvent("estante:changed"));
     if (editandoId === livro.id) {
       cancelarFormulario();
     }
@@ -194,11 +229,25 @@ export default function Livros() {
               </label>
               <label>
                 Autor
-                <input
-                  value={formLivro.autor}
-                  onChange={(e) => setFormLivro((prev) => ({ ...prev, autor: e.target.value }))}
-                  placeholder="Nome do autor"
-                />
+                <select
+                  value={formLivro.autorId}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const selectedAutor = autores.find((autor) => autor.id.toString() === selectedId);
+                    setFormLivro((prev) => ({
+                      ...prev,
+                      autorId: selectedId,
+                      autorNome: selectedAutor ? selectedAutor.nome : "",
+                    }));
+                  }}
+                >
+                  <option value="">Selecione um autor existente</option>
+                  {autores.map((autor) => (
+                    <option key={autor.id} value={autor.id}>
+                      {autor.nome}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Nacionalidade
@@ -257,7 +306,7 @@ export default function Livros() {
                 </button>
               </div>
               <h3>{livro.titulo}</h3>
-              <p className="livro-autor">{livro.autor} • {livro.nacionalidade}</p>
+              <p className="livro-autor">{getAutorNome(livro)} • {livro.nacionalidade}</p>
               <div className="livro-meta">
                 <p>{livro.editora} • {livro.ano}</p>
               </div>
@@ -295,7 +344,7 @@ export default function Livros() {
               <div>
                 <p className="livro-genero">{livro.genero}</p>
                 <h3>{livro.titulo}</h3>
-                <p className="livro-autor">{livro.autor}</p>
+                <p className="livro-autor">{getAutorNome(livro)}</p>
                 <p className="livro-meta-row">{livro.editora} • {livro.ano}</p>
                 {isBibliotecario && (
                   <div className="livro-row-actions">

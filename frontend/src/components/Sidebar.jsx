@@ -4,6 +4,7 @@ import logo from "../imagens/logo.png";
 import inicioIcon from "../imagens/icons/inicio.png";
 import tituloMenuIcon from "../imagens/icons/livro_branco.png";
 import autoresMenuIcon from "../imagens/icons/autores_branco.png";
+import leitoresMenuIcon from "../imagens/icons/leitores.png";
 import estanteMenuIcon from "../imagens/icons/estante_branca (2).png";
 import generosMenuIcon from "../imagens/icons/coracao_branco.png";
 import sairIcon from "../imagens/icons/sair_branco.png";
@@ -17,9 +18,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const menu = [
     { path: "/", label: "Início", iconUrl: inicioIcon },
     { path: "/livros", label: "Livros", iconUrl: tituloMenuIcon },
+    { path: "/autores", label: "Autores", iconUrl: autoresMenuIcon },
     // Leitores só aparece para bibliotecários
     ...(user?.tipo === "bibliotecario"
-      ? [{ path: "/leitores", label: "Leitores", iconUrl: autoresMenuIcon }]
+      ? [{ path: "/leitores", label: "Leitores", iconUrl: leitoresMenuIcon }]
       : []),
     { path: "/estante", label: "Estante", iconUrl: estanteMenuIcon },
     { path: "/generos", label: "Gêneros", iconUrl: generosMenuIcon },
@@ -60,7 +62,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             {!collapsed && <span>{item.label}</span>}
           </Link>
         ))}
-      </nav>
+      </nav>  
 
       {/* USER INFO + LOGOUT */}
       <div style={{ marginTop: "auto" }}>
