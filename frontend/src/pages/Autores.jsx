@@ -151,32 +151,36 @@ export default function Autores() {
 
   return (
     <section className="livros-page">
-      <header className="livros-header">
-        <div>
-          <p className="livros-kicker">Catálogo</p>
-          <h1>Autores</h1>
-        </div>
-        {isBibliotecario && (
-          <button type="button" className="livros-add-btn" onClick={abrirAdicionarAutor}>
-            + Adicionar Autor
-          </button>
-        )}
-      </header>
+      {!selectedAutor && (
+        <>
+          <header className="livros-header">
+            <div>
+              <p className="livros-kicker">Catálogo</p>
+              <h1>Autores</h1>
+            </div>
+            {isBibliotecario && (
+              <button type="button" className="livros-add-btn" onClick={abrirAdicionarAutor}>
+                + Adicionar Autor
+              </button>
+            )}
+          </header>
 
-      <div className="livros-filters">
-        <label htmlFor="busca-autores" className="livros-search">
-          <span aria-hidden="true">🔎</span>
-          <input
-            id="busca-autores"
-            type="search"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Pesquisar autores pelo nome..."
-          />
-        </label>
-        <div />
-        <div />
-      </div>
+          <div className="livros-filters">
+            <label htmlFor="busca-autores" className="livros-search">
+              <span aria-hidden="true">🔎</span>
+              <input
+                id="busca-autores"
+                type="search"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Pesquisar autores pelo nome..."
+              />
+            </label>
+            <div />
+            <div />
+          </div>
+        </>
+      )}
 
       {formAberto && (
         <>
@@ -278,7 +282,7 @@ export default function Autores() {
           {livrosDoAutor.length > 0 ? (
             <div className="livros-grid">
               {livrosDoAutor.map((livro) => (
-                <article key={livro.id} className="livro-card" style={{ "--livro-accent": "#7a5a92" }}>
+                <article key={livro.id} className="livro-card" style={{ "--livro-accent": getGeneroColor(livro.genero) }}>
                   <div className="livro-card-header">
                     <p className="livro-genero">{livro.genero}</p>
                     <button 
