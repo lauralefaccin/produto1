@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import "./Livros.css";
 import { GENEROS, getGeneroColor, useGeneros } from "../data/generos";
 import { saveAcervo, useAcervo } from "../data/acervo";
@@ -11,7 +12,16 @@ export default function Livros() {
   const autores = useAutores();
   const generos = useGeneros();
   const [busca, setBusca] = useState("");
-  const [genero, setGenero] = useState("Todos os gêneros");
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const generoParam = params.get("genero");
+  const [genero, setGenero] = useState(generoParam || "Todos os gêneros");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const g = params.get("genero");
+    if (g) setGenero(g);
+  }, [location.search]);
   const [modo, setModo] = useState("cards");
 
   const { user } = useAuth();

@@ -37,6 +37,16 @@ export default function Autores() {
     return acervo.filter((livro) => livro.autorId === selectedAutor.id);
   }, [acervo, selectedAutor]);
 
+  const livrosFiltradosPorBusca = useMemo(() => {
+    if (!selectedAutor) return [];
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return livrosDoAutor;
+    return livrosDoAutor.filter((livro) => {
+      const alvo = `${livro.titulo} ${livro.genero}`.toLowerCase();
+      return alvo.includes(termo);
+    });
+  }, [selectedAutor, livrosDoAutor, busca]);
+
   // FUNÇÃO PARA SALVAR NA ESTANTE
   const adicionarAEstante = (livro, e) => {
     if (e) {
@@ -274,14 +284,24 @@ export default function Autores() {
           </div>
 
           <div className="livros-filters" style={{ marginBottom: 10, borderBottom: "none" }}>
+            <label htmlFor="busca-livros" className="livros-search">
+              <span aria-hidden="true">🔎</span>
+              <input
+                id="busca-livros"
+                type="search"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Pesquisar livros ou gêneros do autor..."
+              />
+            </label>
             <p style={{ margin: 0, color: "#6f5f49" }}>
-              {livrosDoAutor.length} livro(s) encontrado(s) para este autor.
+              {livrosFiltradosPorBusca.length} livro(s) encontrado(s) para este autor.
             </p>
           </div>
 
-          {livrosDoAutor.length > 0 ? (
+          {livrosFiltradosPorBusca.length > 0 ? (
             <div className="livros-grid">
-              {livrosDoAutor.map((livro) => (
+              {livrosFiltradosPorBusca.map((livro) => (
                 <article key={livro.id} className="livro-card" style={{ "--livro-accent": getGeneroColor(livro.genero) }}>
                   <div className="livro-card-header">
                     <p className="livro-genero">{livro.genero}</p>

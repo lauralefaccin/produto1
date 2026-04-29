@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAutores } from "../data/autores";
 import "./Livros.css";
 import {
   GENEROS,
@@ -24,6 +25,29 @@ export default function Generos() {
   const [formAberto, setFormAberto] = useState(false);
   const [editandoGenero, setEditandoGenero] = useState(null);
   const [formGenero, setFormGenero] = useState(initialGeneroForm);
+  const [selectedGenero, setSelectedGenero] = useState(null);
+
+  const autores = useAutores();
+  const autoresMap = useMemo(
+    () => Object.fromEntries(autores.map((autor) => [autor.id, autor.nome])),
+    [autores]
+  );
+
+  const livrosDoGenero = useMemo(() => {
+    if (!selectedGenero) return [];
+    return acervo.filter((livro) => livro.genero === selectedGenero.nome);
+  }, [acervo, selectedGenero]);
+
+  const livrosFiltradosPorBusca = useMemo(() => {
+    if (!selectedGenero) return [];
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return livrosDoGenero;
+    return livrosDoGenero.filter((livro) => {
+      const autorNome = autoresMap[livro.autorId] || livro.autor || "";
+      const alvo = `${livro.titulo} ${autorNome} ${livro.genero}`.toLowerCase();
+      return alvo.includes(termo);
+    });
+  }, [selectedGenero, livrosDoGenero, busca, autoresMap]);
 
   const livrosPorGenero = useMemo(() => {
     return acervo.reduce((acc, livro) => {
@@ -131,7 +155,7 @@ export default function Generos() {
           <h1>Gêneros</h1>
         </div>
 
-        {isBibliotecario && (
+        {isBibliotecario && !selectedGenero && (
           <button type="button" className="livros-add-btn" onClick={abrirAdicionarGenero}>
             + Adicionar Gênero
           </button>
@@ -146,7 +170,7 @@ export default function Generos() {
             type="search"
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
-            placeholder="Pesquisar gênero..."
+            placeholder={selectedGenero ? "Pesquisar livros ou nome do autor" : "Pesquisar gênero..."}
           />
         </label>
 
@@ -207,35 +231,76 @@ export default function Generos() {
         </>
       )}
 
-      {modo === "cards" && (
-        <div className="livros-grid">
-          {generosFiltrados.map((item) => (
-            <article
-              key={item.nome}
-              className="livro-card"
-              style={{ "--livro-accent": item.cor || getGeneroColor(item.nome) }}
-            >
-              <h3>{item.nome}</h3>
-              <p className="livro-autor">{item.descricao}</p>
+      {selectedGenero ? (
+        <>
+          <div className="livros-header" style={{ marginTop: 0 }}>
+            <div>
+              <p className="livros-kicker">Gênero selecionado</p>
+              <h1>{selectedGenero.nome}</h1>
+            </div>
+            <button type="button" className="livros-add-btn" onClick={() => setSelectedGenero(null)}>
+              Voltar para gêneros
+            </button>
+          </div>
 
-              <div className="livro-meta">
-                <p>Livros no acervo</p>
-                <p>{livrosPorGenero[item.nome] || 0}</p>
-              </div>
+          <div className="livros-filters" style={{ marginBottom: 10, borderBottom: "none" }}>
+            <p style={{ margin: 0, color: "#6f5f49" }}>{livrosFiltradosPorBusca.length} livro(s) encontrado(s) para este gênero.</p>
+          </div>
 
-              {isBibliotecario && (
-                <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
-                  <button type="button" className="btn-add-estante-list" onClick={() => abrirEditarGenero(item)}>
-                    Editar
-                  </button>
-                  <button type="button" className="btn-delete" onClick={() => excluirGenero(item)}>
-                    Excluir
-                  </button>
+          {livrosFiltradosPorBusca.length > 0 ? (
+            <div className="livros-grid">
+              {livrosFiltradosPorBusca.map((livro) => (
+                <article key={livro.id} className="livro-card" style={{ "--livro-accent": getGeneroColor(livro.genero) }}>
+                  <div className="livro-card-header">
+                    <p className="livro-genero">{livro.genero}</p>
+                  </div>
+                  <h3>{livro.titulo}</h3>
+                  <p className="livro-autor">{autoresMap[livro.autorId] || livro.autor || "Autor não informado"} • {livro.nacionalidade}</p>
+                  <div className="livro-meta">
+                    <p>{livro.editora} • {livro.ano}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="livros-vazio">Nenhum livro encontrado para este gênero.</div>
+          )}
+        </>
+      ) : (
+        modo === "cards" && (
+          <div className="livros-grid">
+            {generosFiltrados.map((item) => (
+              <article
+                key={item.nome}
+                className="livro-card"
+                style={{ "--livro-accent": item.cor || getGeneroColor(item.nome) }}
+                onClick={() => setSelectedGenero(item)}
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedGenero(item)}
+              >
+                <h3>{item.nome}</h3>
+                <p className="livro-autor">{item.descricao}</p>
+
+                <div className="livro-meta">
+                  <p>Livros no acervo</p>
+                  <p>{livrosPorGenero[item.nome] || 0}</p>
                 </div>
-              )}
-            </article>
-          ))}
-        </div>
+
+                {isBibliotecario && (
+                  <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+                    <button type="button" className="btn-add-estante-list" onClick={(e) => { e.stopPropagation(); abrirEditarGenero(item); }}>
+                      Editar
+                    </button>
+                    <button type="button" className="btn-delete" onClick={(e) => { e.stopPropagation(); excluirGenero(item); }}>
+                      Excluir
+                    </button>
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        )
       )}
 
       {modo === "lista" && (
@@ -251,10 +316,10 @@ export default function Generos() {
                 <p className="livro-autor">{item.descricao}</p>
                 {isBibliotecario && (
                   <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
-                    <button type="button" className="btn-add-estante-list" onClick={() => abrirEditarGenero(item)}>
+                    <button type="button" className="btn-add-estante-list" onClick={(e) => { e.stopPropagation(); abrirEditarGenero(item); }}>
                       Editar
                     </button>
-                    <button type="button" className="btn-delete" onClick={() => excluirGenero(item)}>
+                    <button type="button" className="btn-delete" onClick={(e) => { e.stopPropagation(); excluirGenero(item); }}>
                       Excluir
                     </button>
                   </div>
