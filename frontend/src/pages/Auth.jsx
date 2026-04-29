@@ -98,7 +98,7 @@ function LoginForm({ tipo, setTipo }) {
 
 // ── Register Form ─────────────────────────────────────────
 function CadastroForm({ tipo, setTipo }) {
-  const { cadastrarBibliotecario, cadastrarLeitor } = useAuth();
+   const { cadastrarBibliotecario, cadastrarLeitor, login } = useAuth();
 
   const [form, setForm] = useState({ nome: "", cpf: "", login: "", senha: "", confirmar: "" });
   const [erro, setErro] = useState("");
@@ -106,7 +106,7 @@ function CadastroForm({ tipo, setTipo }) {
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setErro(""); setSucesso("");
 
     if (!form.nome.trim())   { setErro("Informe o nome completo."); return; }
@@ -116,7 +116,7 @@ function CadastroForm({ tipo, setTipo }) {
     if (form.senha.length < 4) { setErro("A senha deve ter no mínimo 4 caracteres."); return; }
 
     const fn = tipo === "bibliotecario" ? cadastrarBibliotecario : cadastrarLeitor;
-    const result = fn({
+    const result = await fn({          // ← await aqui
       nome: form.nome.trim(),
       cpf: form.cpf.trim(),
       login: form.login.trim(),
@@ -125,8 +125,23 @@ function CadastroForm({ tipo, setTipo }) {
 
     if (!result.ok) { setErro(result.erro); return; }
 
-    setSucesso("Cadastro realizado! Faça login para entrar.");
-    setForm({ nome: "", cpf: "", login: "", senha: "", confirmar: "" });
+    // Login automático após cadastro
+    const resultLogin = await login(form.login.trim(), form.senha, tipo);
+    if (!resultLogin.ok) {
+      // Cadastrou mas falhou o login — mostra sucesso e deixa o usuário entrar manualmente
+      setSucesso("Cadastro realizado! Faça login para entrar.");
+      setForm({ nome: "", cpf: "", login: "", senha: "", confirmar: "" });
+    }
+    // Se login ok, o AuthContext já redireciona automaticamente
+  }
+
+  function mascaraCPF(valor) {
+    return valor
+      .replace(/\D/g, "")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+      .slice(0, 14);
   }
 
   return (
@@ -148,7 +163,17 @@ function CadastroForm({ tipo, setTipo }) {
       </div>
 
       <Field label="Nome completo" value={form.nome} onChange={set("nome")} placeholder="Seu nome" />
-      <Field label="CPF" value={form.cpf} onChange={set("cpf")} placeholder="000.000.000-00" />
+      <div className="auth-field">
+        <label>CPF</label>
+        <input
+          type="text"
+          value={form.cpf}
+          onChange={(e) => setForm((f) => ({ ...f, cpf: mascaraCPF(e.target.value) }))}
+          placeholder="000.000.000-00"
+          maxLength={14}
+          autoComplete="off"
+        />
+      </div>
       <Field label="Login" value={form.login} onChange={set("login")} placeholder="Escolha um login" />
       <Field label="Senha" type="password" value={form.senha} onChange={set("senha")} placeholder="Mínimo 4 caracteres" />
       <Field label="Confirmar senha" type="password" value={form.confirmar} onChange={set("confirmar")} placeholder="Repita a senha" />
