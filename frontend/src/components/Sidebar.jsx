@@ -104,6 +104,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             justifyContent: collapsed ? "center" : "flex-start",
             gap: "8px",
             transition: "0.2s",
+            marginBottom: "%",
           }}
           onMouseEnter={(e) => e.currentTarget.style.background = "rgba(200,146,42,0.1)"}
           onMouseLeave={(e) => e.currentTarget.style.background = "none"}

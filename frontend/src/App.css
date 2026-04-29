@@ -5,10 +5,6 @@ body {
   background: #f4f4f4;
 }
 
-.layout {
-  display: flex;
-}
-
 /* SIDEBAR */
 .sidebar {
   width: 220px;
@@ -19,6 +15,10 @@ body {
   transition: 0.3s;
   display: flex;
   flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
 }
 
 .sidebar.collapsed {
@@ -124,6 +124,12 @@ body {
 .content {
   flex: 1;
   padding: 30px;
+  margin-left: 13%;
+  transition: margin-left 0.3s;
+}
+
+.content.expanded {
+  margin-left: 13%;
 }
 
 /* HEADER (dashboard) */
@@ -147,11 +153,6 @@ body {
 
 .layout {
   min-height: 100vh;
-}
-
-.sidebar {
-  min-height: 100vh;
-  height: auto;
 }
 
 @media (max-width: 900px) {
@@ -404,5 +405,5 @@ td:last-child {
 .empty-msg { text-align: center; margin-top: 50px; color: #666; }
 
 .content.expanded {
-  margin-left: 0; 
+  margin-left: 5%;
 }

@@ -4,6 +4,7 @@ import { saveAutores, useAutores } from "../data/autores";
 import { useAuth } from "../context/AuthContext";
 import { getGeneroColor, useGeneros } from "../data/generos";
 import "./Livros.css";
+import estanteIcon from "../imagens/icons/estante (2).png";
 
 const initialForm = {
   nome: "",
@@ -35,6 +36,29 @@ export default function Autores() {
     if (!selectedAutor) return [];
     return acervo.filter((livro) => livro.autorId === selectedAutor.id);
   }, [acervo, selectedAutor]);
+
+  // FUNÇÃO PARA SALVAR NA ESTANTE
+  const adicionarAEstante = (livro, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    const estanteAtual = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
+    const ids = Array.isArray(estanteAtual)
+      ? estanteAtual.map((item) => (typeof item === "number" ? item : item?.id)).filter(Boolean)
+      : [];
+
+    if (ids.includes(livro.id)) {
+      alert("Este livro já está na sua estante!");
+      return;
+    }
+
+    const novaEstante = [...ids, livro.id];
+    localStorage.setItem("minhaEstante", JSON.stringify(novaEstante));
+    window.dispatchEvent(new CustomEvent("estante:changed"));
+    alert(`${livro.titulo} foi adicionado à sua Estante!`);
+  };
 
   const abrirAdicionarAutor = () => {
     setFormAutor(initialForm);
@@ -257,6 +281,13 @@ export default function Autores() {
                 <article key={livro.id} className="livro-card" style={{ "--livro-accent": "#7a5a92" }}>
                   <div className="livro-card-header">
                     <p className="livro-genero">{livro.genero}</p>
+                    <button 
+                      className="btn-add-estante" 
+                      onClick={(e) => adicionarAEstante(livro, e)}
+                      title="Salvar na Estante"
+                    >
+                      <img src={estanteIcon} alt="Salvar na Estante" />
+                    </button>
                   </div>
                   <h3>{livro.titulo}</h3>
                   <p className="livro-autor">{selectedAutor.nome} • {livro.nacionalidade}</p>
