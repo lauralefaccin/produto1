@@ -98,13 +98,63 @@
   font-size: 13px;
 }
 
-.livros-form-grid input {
+.livros-form-grid input,
+.livros-form-grid select {
   border: 1px solid #dfd1ba;
   border-radius: 12px;
   background: #fff;
   color: #3f311f;
   padding: 10px 12px;
   font-size: 14px;
+}
+
+.livros-form-grid select {
+  min-height: 48px;
+}
+
+.generos-lista-selecao {
+  display: grid;
+  gap: 0;
+  border: 1px solid #dfd1ba;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.generos-lista-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee4d4;
+  cursor: pointer;
+  color: #3f311f;
+  font-size: 14px;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  outline: none;
+  appearance: none;
+}
+
+.generos-lista-item:last-child {
+  border-bottom: none;
+}
+
+.generos-lista-item:hover {
+  background: #f7f2e6;
+}
+
+.generos-lista-item.is-selected {
+  background: #f2e3c1;
+  color: #2f1f08;
+}
+
+.generos-lista-item.is-selected:hover {
+  background: #ead6a9;
 }
 
 .livros-form-actions {

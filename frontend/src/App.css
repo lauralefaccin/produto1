@@ -222,6 +222,9 @@ body {
   border-radius: 12px;
   width: 140px;
   text-align: center;
+  border: 1px solid #e0d2bc;
+  border-top: 6px solid #2f1f08;
+  box-shadow: 0 6px 14px rgba(44, 31, 18, 0.08);
 }
 
 /* ICONES */

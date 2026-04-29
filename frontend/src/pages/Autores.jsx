@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { saveAcervo, useAcervo } from "../data/acervo";
 import { saveAutores, useAutores } from "../data/autores";
 import { useAuth } from "../context/AuthContext";
+import { getGeneroColor, useGeneros } from "../data/generos";
 import "./Livros.css";
 
 const initialForm = {
@@ -9,12 +10,13 @@ const initialForm = {
   ano_nascimento: "",
   nacionalidade: "",
   descricao: "",
-  principais_generos: "",
+  principais_generos: [],
 };
 
 export default function Autores() {
   const autores = useAutores();
   const acervo = useAcervo();
+  const generos = useGeneros();
   const { user } = useAuth();
   const isBibliotecario = user?.tipo === "bibliotecario";
 
@@ -40,13 +42,24 @@ export default function Autores() {
     setFormAberto(true);
   };
 
+  const normalizeGeneros = (generos) => {
+    if (Array.isArray(generos)) return generos;
+    if (typeof generos === "string") {
+      return generos
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+
   const abrirEditarAutor = (autor) => {
     setFormAutor({
       nome: autor.nome || "",
       ano_nascimento: autor.ano_nascimento?.toString() || "",
       nacionalidade: autor.nacionalidade || "",
       descricao: autor.descricao || "",
-      principais_generos: (autor.principais_generos || []).join(", "),
+      principais_generos: normalizeGeneros(autor.principais_generos),
     });
     setEditandoId(autor.id);
     setFormAberto(true);
@@ -70,10 +83,7 @@ export default function Autores() {
       ano_nascimento: Number(formAutor.ano_nascimento) || undefined,
       nacionalidade: formAutor.nacionalidade.trim(),
       descricao: formAutor.descricao.trim(),
-      principais_generos: formAutor.principais_generos
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
+      principais_generos: normalizeGeneros(formAutor.principais_generos),
     };
 
     const novoAutores = editandoId
@@ -176,11 +186,29 @@ export default function Autores() {
               </label>
               <label style={{ gridColumn: "1 / -1" }}>
                 Principais gêneros
-                <input
-                  value={formAutor.principais_generos}
-                  onChange={(e) => setFormAutor((prev) => ({ ...prev, principais_generos: e.target.value }))}
-                  placeholder="Ex: Fantasia, Ficção"
-                />
+                <div className="generos-lista-selecao">
+                  {generos.map((genero) => {
+                    const selecionado = formAutor.principais_generos.includes(genero.nome);
+
+                    return (
+                      <button
+                        key={genero.nome}
+                        type="button"
+                        className={`generos-lista-item${selecionado ? " is-selected" : ""}`}
+                        onClick={() => {
+                          setFormAutor((prev) => ({
+                            ...prev,
+                            principais_generos: selecionado
+                              ? prev.principais_generos.filter((item) => item !== genero.nome)
+                              : [...prev.principais_generos, genero.nome],
+                          }));
+                        }}
+                      >
+                        <span>{genero.nome}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </label>
               <label style={{ gridColumn: "1 / -1" }}>
                 Descrição opcional
@@ -245,23 +273,29 @@ export default function Autores() {
         </>
       ) : (
         <div className="livros-grid">
-          {autoresFiltrados.map((autor) => (
-            <article
-              key={autor.id}
-              className="livro-card"
-              style={{ "--livro-accent": "#2d5c4e", cursor: "pointer" }}
-              onClick={() => setSelectedAutor(autor)}
-            >
-              <div className="livro-card-header">
-                <p className="livro-genero">{autor.principais_generos?.[0] || "Autor"}</p>
-              </div>
-              <h3>{autor.nome}</h3>
-              <p className="livro-autor">{autor.nacionalidade || "Nacionalidade não informada"}</p>
-              <p className="livro-meta-row">{autor.ano_nascimento ? `Nascido em ${autor.ano_nascimento}` : "Ano de nascimento não informado"}</p>
-              {autor.descricao && <p className="livro-meta-row">{autor.descricao}</p>}
-              {autor.principais_generos?.length > 0 && (
-                <p className="livro-meta-row">Gêneros: {autor.principais_generos.join(", ")}</p>
-              )}
+          {autoresFiltrados.map((autor) => {
+            const generoPrincipal = normalizeGeneros(autor.principais_generos)[0] || "";
+            const generosAutor = normalizeGeneros(autor.principais_generos);
+            return (
+              <article
+                key={autor.id}
+                className="livro-card"
+                style={{
+                  "--livro-accent": getGeneroColor(generoPrincipal),
+                  cursor: "pointer",
+                }}
+                onClick={() => setSelectedAutor(autor)}
+              >
+                <div className="livro-card-header">
+                  <p className="livro-genero">{generoPrincipal || "Autor"}</p>
+                </div>
+                <h3>{autor.nome}</h3>
+                <p className="livro-autor">{autor.nacionalidade || "Nacionalidade não informada"}</p>
+                <p className="livro-meta-row">{autor.ano_nascimento ? `Nascido em ${autor.ano_nascimento}` : "Ano de nascimento não informado"}</p>
+                {autor.descricao && <p className="livro-meta-row">{autor.descricao}</p>}
+                {generosAutor.length > 0 && (
+                  <p className="livro-meta-row">Gêneros: {generosAutor.join(", ")}</p>
+                )}
               {isBibliotecario && (
                 <div className="livro-card-actions">
                   <button
@@ -287,7 +321,7 @@ export default function Autores() {
                 </div>
               )}
             </article>
-          ))}
+          )})}
 
           {autoresFiltrados.length === 0 && (
             <div className="livros-vazio">Nenhum autor encontrado. Ajuste a pesquisa ou adicione um novo autor.</div>
