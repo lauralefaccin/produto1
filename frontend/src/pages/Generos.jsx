@@ -273,7 +273,7 @@ export default function Generos() {
               <article
                 key={item.nome}
                 className="livro-card"
-                style={{ "--livro-accent": item.cor || getGeneroColor(item.nome) }}
+                style={{ "--livro-accent": item.cor || getGeneroColor(item.nome), cursor: "pointer" }}
                 onClick={() => setSelectedGenero(item)}
                 role="button"
                 tabIndex={0}
