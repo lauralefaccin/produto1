@@ -73,14 +73,14 @@ export default function Leitores() {
   const [sucessoEdit,   setSucessoEdit]   = useState("");
   const [salvandoEdit,  setSalvandoEdit]  = useState(false);
 
-  // ── Carregar leitores ────────────────────────────────────
+  // ── Carregar usuários ────────────────────────────────────
   const carregar = useCallback(async () => {
     try {
       setCarregando(true);
-      const data = await api.getLeitores();
+      const data = await api.getUsuarios();
       setLeitores(data);
     } catch (err) {
-      console.error("Erro ao carregar leitores:", err.message);
+      console.error("Erro ao carregar usuários:", err.message);
     } finally {
       setCarregando(false);
     }
@@ -143,7 +143,7 @@ export default function Leitores() {
 
     try {
       setSalvandoEdit(true);
-      await api.editarLeitor(editando.id, {
+      await api.editarUsuario(editando.tipo, editando.id, {
         login: formEdit.login.trim(),
         ...(formEdit.senha ? { senha: formEdit.senha } : {}),
       });
@@ -157,11 +157,11 @@ export default function Leitores() {
   }
 
   // ── Delete ───────────────────────────────────────────────
-  async function handleRemove(id) {
-    if (!window.confirm("Deseja remover este leitor?")) return;
+  async function handleRemove(leitor) {
+    if (!window.confirm("Deseja remover este usuário?")) return;
     try {
-      await api.deletarLeitor(id);
-      setLeitores((prev) => prev.filter((l) => l.id !== id));
+      await api.deletarUsuario(leitor.tipo, leitor.id);
+      await carregar();
     } catch (err) {
       alert(`Erro: ${err.message}`);
     }
@@ -202,22 +202,26 @@ export default function Leitores() {
                 <th>Registro</th>
                 <th>Login</th>
                 <th>Senha</th>
-                <th>Situação</th>
+                <th>Tipo</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((l) => (
-                <tr key={l.id}>
+                <tr key={`${l.tipo}-${l.id}`}>
                   <td data-label="Nome"><strong>{l.nome}</strong></td>
                   <td data-label="CPF">{l.cpf || "—"}</td>
                   <td data-label="Registro">{fmtDate(l.data_registro)}</td>
                   <td data-label="Login"><code className="login-chip">{l.login}</code></td>
                   <td data-label="Senha"><SenhaCell /></td>
-                  <td data-label="Situação"><Badge type="green">Regular</Badge></td>
+                  <td data-label="Tipo">
+                    <Badge type={l.tipo === "bibliotecario" ? "gray" : "green"}>
+                      {l.tipo === "bibliotecario" ? "Bibliotecário" : "Leitor"}
+                    </Badge>
+                  </td>
                   <td data-label="Ações" className="leitores-actions-cell">
                     <button className="btn-action" onClick={() => abrirEdit(l)}>✏️ Editar</button>
-                    <button className="btn-action btn-action-danger" onClick={() => handleRemove(l.id)}>🗑️ Remover</button>
+                    <button className="btn-action btn-action-danger" onClick={() => handleRemove(l)}>🗑️ Remover</button>
                   </td>
                 </tr>
               ))}

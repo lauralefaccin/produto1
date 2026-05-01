@@ -45,6 +45,11 @@ export const api = {
   editarLeitor:   (id, d)  => req("PUT",    `/leitores/${id}`, d),
   deletarLeitor:  (id)     => req("DELETE", `/leitores/${id}`),
 
+  // Usuários genéricos (leitores e bibliotecários)
+  getUsuarios:    ()       => req("GET",    "/usuarios"),
+  editarUsuario:  (tipo, id, d) => req("PUT",    `/usuarios/${tipo}/${id}`, d),
+  deletarUsuario: (tipo, id)     => req("DELETE", `/usuarios/${tipo}/${id}`),
+
   // Estante
   getEstante:         ()  => req("GET",    "/estante"),
   adicionarEstante:   (livroId) => req("POST",   `/estante/${livroId}`),
