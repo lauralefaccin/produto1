@@ -12,6 +12,7 @@ body {
   color: white;
   height: 100vh;
   padding: 15px;
+  padding-bottom: 32px;
   transition: 0.3s;
   display: flex;
   flex-direction: column;
@@ -19,10 +20,12 @@ body {
   left: 0;
   top: 0;
   z-index: 1000;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .sidebar.collapsed {
-  width: 70px;
+  width: 90px;
 }
 
 /* HEADER DA SIDEBAR */
@@ -33,6 +36,12 @@ body {
   margin-bottom: 25px;
 }
 
+.sidebar.collapsed .sidebar-header {
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
 /* LOGO */
 .logo {
   margin: 0;
@@ -41,8 +50,8 @@ body {
 }
 
 .logo-image {
-  width: 28px;
-  height: 28px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   display: block;
   margin: 0 auto;
@@ -55,21 +64,31 @@ body {
   width: 100%;
 }
 
+.sidebar.collapsed .logo .logo-image,
+.sidebar.collapsed .logo-image {
+  width: 48px;
+  height: 48px;
+}
+
 /* BOTÃO */
 .toggle {
-  width: 35px;
-  height: 35px;
+  width: 42px;
+  height: 42px;
   background: #2b170a;
   border: none;
   color: white;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   transition: 0.2s;
+}
+
+.sidebar.collapsed .toggle {
+  margin-top: 0;
 }
 
 .toggle:hover {
@@ -108,6 +127,22 @@ body {
   min-width: 28px;
 }
 
+.sidebar-footer {
+  margin-top: auto;
+}
+
+.sidebar-user-card {
+  background: #2b170a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.logout-button {
+  width: 100%;
+  margin-bottom: 0;
+}
+
 .menu-icon img {
   width: 22px;
   height: 22px;
@@ -124,12 +159,13 @@ body {
 .content {
   flex: 1;
   padding: 30px;
-  margin-left: 13%;
-  transition: margin-left 0.3s;
+  margin-left: 250px;
+  transition: margin-left 0.3s, padding 0.3s;
+  min-height: 100vh;
 }
 
-.content.expanded {
-  margin-left: 13%;
+.content.collapsed {
+  margin-left: 110px;
 }
 
 /* HEADER (dashboard) */
@@ -162,7 +198,7 @@ body {
   }
 
   .sidebar.collapsed {
-    width: 70px;
+    width: 90px;
   }
 
   .sidebar-header {
@@ -403,7 +439,3 @@ td:last-child {
 }
 
 .empty-msg { text-align: center; margin-top: 50px; color: #666; }
-
-.content.expanded {
-  margin-left: 5%;
-}

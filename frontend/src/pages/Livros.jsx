@@ -2,13 +2,12 @@ import { useMemo, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import "./Livros.css";
 import { GENEROS, getGeneroColor, useGeneros } from "../data/generos";
-import { saveAcervo, useAcervo } from "../data/acervo";
 import { useAutores } from "../data/autores";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
 import estanteIcon from "../imagens/icons/estante (2).png";
 
 export default function Livros() {
-  const acervo = useAcervo();
   const autores = useAutores();
   const generos = useGeneros();
   const [busca, setBusca] = useState("");
@@ -26,6 +25,8 @@ export default function Livros() {
 
   const { user } = useAuth();
   const isBibliotecario = user?.tipo === "bibliotecario";
+  const [acervo, setAcervo] = useState([]);
+  const [estanteIds, setEstanteIds] = useState([]);
 
   const initialForm = {
     genero: "",
@@ -40,6 +41,47 @@ export default function Livros() {
   const [formLivro, setFormLivro] = useState(initialForm);
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
+
+  useEffect(() => {
+    async function loadEstante() {
+      if (!user) {
+        setEstanteIds([]);
+        return;
+      }
+
+      try {
+        const estante = await api.getEstante();
+        setEstanteIds(estante.map((livro) => livro.id));
+      } catch (err) {
+        console.error("Erro ao carregar estante:", err.message);
+        setEstanteIds([]);
+      }
+    }
+
+    loadEstante();
+    const handler = () => loadEstante();
+    window.addEventListener("estante:changed", handler);
+    return () => window.removeEventListener("estante:changed", handler);
+  }, [user]);
+
+  useEffect(() => {
+    async function loadLivros() {
+      if (!user) {
+        setAcervo([]);
+        return;
+      }
+
+      try {
+        const livros = await api.getLivros();
+        setAcervo(livros);
+      } catch (err) {
+        console.error("Erro ao carregar livros:", err.message);
+        setAcervo([]);
+      }
+    }
+
+    loadLivros();
+  }, [user]);
 
   const getCorGenero = (generoNome) => {
     const generoCustomizado = generos.find((g) => g.nome === generoNome);
@@ -77,26 +119,32 @@ export default function Livros() {
   }, [busca, genero, acervo, autoresMap]);
 
   // FUNÇÃO PARA SALVAR NA ESTANTE
-  const adicionarAEstante = (livro, e) => {
+  const adicionarAEstante = async (livro, e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    
-    const estanteAtual = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
-    const ids = Array.isArray(estanteAtual)
-      ? estanteAtual.map((item) => (typeof item === "number" ? item : item?.id)).filter(Boolean)
-      : [];
 
-    if (ids.includes(livro.id)) {
+    if (!user) {
+      alert("Faça login para adicionar livros à estante.");
+      return;
+    }
+
+    if (estanteIds.includes(livro.id)) {
       alert("Este livro já está na sua estante!");
       return;
     }
 
-    const novaEstante = [...ids, livro.id];
-    localStorage.setItem("minhaEstante", JSON.stringify(novaEstante));
-    window.dispatchEvent(new CustomEvent("estante:changed"));
-    alert(`${livro.titulo} foi adicionado à sua Estante!`);
+    try {
+      await api.adicionarEstante(livro.id);
+      const novaEstante = [...estanteIds, livro.id];
+      setEstanteIds(novaEstante);
+      window.dispatchEvent(new CustomEvent("estante:changed"));
+      alert(`${livro.titulo} foi adicionado à sua Estante!`);
+    } catch (err) {
+      console.error("Erro ao adicionar à estante:", err.message);
+      alert("Não foi possível adicionar à estante no momento.");
+    }
   };
 
   const abrirAdicionarLivro = () => {
@@ -125,7 +173,7 @@ export default function Livros() {
     setFormAberto(false);
   };
 
-  const salvarLivro = () => {
+  const salvarLivro = async () => {
     if (!formLivro.titulo.trim() || !formLivro.autorId || !formLivro.genero.trim()) {
       alert("Preencha pelo menos título, autor e gênero.");
       return;
@@ -150,27 +198,35 @@ export default function Livros() {
       ano: Number(formLivro.ano) || 0,
     };
 
-    const novoAcervo = editandoId
-      ? acervo.map((livro) => (livro.id === editandoId ? { ...livro, ...livroFormatado, id: editandoId } : livro))
-      : [...acervo, { ...livroFormatado, id: Date.now() }];
-
-    saveAcervo(novoAcervo);
-    cancelarFormulario();
+    try {
+      if (editandoId) {
+        const livroAtualizado = await api.editarLivro(editandoId, livroFormatado);
+        setAcervo((current) => current.map((livro) => (livro.id === editandoId ? livroAtualizado : livro)));
+      } else {
+        const novoLivro = await api.criarLivro(livroFormatado);
+        setAcervo((current) => [...current, novoLivro]);
+      }
+      cancelarFormulario();
+    } catch (err) {
+      console.error("Erro ao salvar livro:", err.message);
+      alert("Não foi possível salvar o livro no momento.");
+    }
   };
 
-  const excluirLivro = (livro) => {
+  const excluirLivro = async (livro) => {
     if (!window.confirm(`Tem certeza de que deseja excluir "${livro.titulo}"? Esta ação removerá o livro de todas as páginas, incluindo a Estante de leitores.`)) {
       return;
     }
-    saveAcervo(acervo.filter((item) => item.id !== livro.id));
-    const estanteAtual = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
-    const novaIds = Array.isArray(estanteAtual)
-      ? estanteAtual.map((item) => (typeof item === "number" ? item : item?.id)).filter(Boolean).filter((id) => id !== livro.id)
-      : [];
-    localStorage.setItem("minhaEstante", JSON.stringify(novaIds));
-    window.dispatchEvent(new CustomEvent("estante:changed"));
-    if (editandoId === livro.id) {
-      cancelarFormulario();
+    try {
+      await api.deletarLivro(livro.id);
+      setAcervo((current) => current.filter((item) => item.id !== livro.id));
+      window.dispatchEvent(new CustomEvent("estante:changed"));
+      if (editandoId === livro.id) {
+        cancelarFormulario();
+      }
+    } catch (err) {
+      console.error("Erro ao excluir livro:", err.message);
+      alert("Não foi possível excluir o livro no momento.");
     }
   };
 
@@ -310,7 +366,8 @@ export default function Livros() {
                 <button 
                   className="btn-add-estante" 
                   onClick={(e) => adicionarAEstante(livro, e)}
-                  title="Salvar na Estante"
+                  title={user ? "Salvar na Estante" : "Faça login para adicionar à estante"}
+                  disabled={!user}
                 >
                   <img src={estanteIcon} alt="Salvar na Estante" />
                 </button>
@@ -378,6 +435,8 @@ export default function Livros() {
               <button 
                 className="btn-add-estante-list" 
                 onClick={(e) => adicionarAEstante(livro, e)}
+                title={user ? "Salvar na Estante" : "Faça login para adicionar à estante"}
+                disabled={!user}
               >
                 <img src={estanteIcon} alt="Salvar na Estante" /> Salvar
               </button>

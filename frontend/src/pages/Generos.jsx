@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAutores } from "../data/autores";
 import "./Livros.css";
 import {
@@ -6,10 +6,10 @@ import {
   getGeneroColor,
   loadGeneros,
   saveGeneros,
-  normalizarGenero,
 } from "../data/generos";
-import { saveAcervo, useAcervo } from "../data/acervo";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
+import estanteIcon from "../imagens/icons/estante (2).png";
 
 const initialGeneroForm = {
   nome: "",
@@ -18,7 +18,8 @@ const initialGeneroForm = {
 };
 
 export default function Generos() {
-  const acervo = useAcervo();
+  const [acervo, setAcervo] = useState([]);
+  const [carregandoLivros, setCarregandoLivros] = useState(true);
   const [busca, setBusca] = useState("");
   const [modo, setModo] = useState("cards");
   const [generos, setGeneros] = useState(() => loadGeneros());
@@ -32,6 +33,15 @@ export default function Generos() {
     () => Object.fromEntries(autores.map((autor) => [autor.id, autor.nome])),
     [autores]
   );
+  const [estanteIds, setEstanteIds] = useState([]);
+
+  const getCorGenero = (generoNome) => {
+    const generoCustomizado = generos.find((g) => g.nome === generoNome);
+    if (generoCustomizado?.cor) {
+      return generoCustomizado.cor;
+    }
+    return getGeneroColor(generoNome);
+  };
 
   const livrosDoGenero = useMemo(() => {
     if (!selectedGenero) return [];
@@ -43,22 +53,65 @@ export default function Generos() {
     const termo = busca.trim().toLowerCase();
     if (!termo) return livrosDoGenero;
     return livrosDoGenero.filter((livro) => {
-      const autorNome = autoresMap[livro.autorId] || livro.autor || "";
+      const autorNome = livro.autor || "";
       const alvo = `${livro.titulo} ${autorNome} ${livro.genero}`.toLowerCase();
       return alvo.includes(termo);
     });
-  }, [selectedGenero, livrosDoGenero, busca, autoresMap]);
+  }, [selectedGenero, livrosDoGenero, busca]);
 
   const livrosPorGenero = useMemo(() => {
     return acervo.reduce((acc, livro) => {
-      const generoNormalizado = normalizarGenero(livro.genero);
-      acc[generoNormalizado] = (acc[generoNormalizado] || 0) + 1;
+      acc[livro.genero] = (acc[livro.genero] || 0) + 1;
       return acc;
     }, {});
   }, [acervo]);
 
   const { user } = useAuth();
   const isBibliotecario = user?.tipo === "bibliotecario";
+
+  useEffect(() => {
+    async function loadEstante() {
+      if (!user) {
+        setEstanteIds([]);
+        return;
+      }
+
+      try {
+        const estante = await api.getEstante();
+        setEstanteIds(estante.map((livro) => livro.id));
+      } catch (err) {
+        console.error("Erro ao carregar estante:", err.message);
+        setEstanteIds([]);
+      }
+    }
+
+    loadEstante();
+    const handler = () => loadEstante();
+    window.addEventListener("estante:changed", handler);
+    return () => window.removeEventListener("estante:changed", handler);
+  }, [user]);
+
+  useEffect(() => {
+    async function loadLivros() {
+      if (!user) {
+        setAcervo([]);
+        setCarregandoLivros(false);
+        return;
+      }
+
+      try {
+        const livros = await api.getLivros();
+        setAcervo(livros);
+      } catch (err) {
+        console.error("Erro ao carregar livros:", err.message);
+        setAcervo([]);
+      } finally {
+        setCarregandoLivros(false);
+      }
+    }
+
+    loadLivros();
+  }, [user]);
 
   const generosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -123,14 +176,38 @@ export default function Generos() {
     saveGeneros(generosAtualizados);
 
     if (editandoGenero && editandoGenero !== nome) {
-      saveAcervo(
-        acervo.map((livro) =>
-          livro.genero === editandoGenero ? { ...livro, genero: nome } : livro
-        )
-      );
+      // A atualização de gêneros de livros ainda não é persistida no backend.
+      // Portanto apenas a lista de gêneros é atualizada aqui.
     }
 
     cancelarFormulario();
+  };
+
+  const adicionarAEstante = async (livro, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (!user) {
+      alert("Faça login para adicionar livros à estante.");
+      return;
+    }
+
+    if (estanteIds.includes(livro.id)) {
+      alert("Este livro já está na sua estante!");
+      return;
+    }
+
+    try {
+      await api.adicionarEstante(livro.id);
+      setEstanteIds((current) => [...current, livro.id]);
+      window.dispatchEvent(new CustomEvent("estante:changed"));
+      alert(`${livro.titulo} foi adicionado à sua Estante!`);
+    } catch (err) {
+      console.error("Erro ao adicionar à estante:", err.message);
+      alert("Não foi possível adicionar à estante no momento.");
+    }
   };
 
   const excluirGenero = (item) => {
@@ -250,9 +327,18 @@ export default function Generos() {
           {livrosFiltradosPorBusca.length > 0 ? (
             <div className="livros-grid">
               {livrosFiltradosPorBusca.map((livro) => (
-                <article key={livro.id} className="livro-card" style={{ "--livro-accent": getGeneroColor(livro.genero) }}>
+                <article key={livro.id} className="livro-card" style={{ "--livro-accent": getCorGenero(livro.genero) }}>
                   <div className="livro-card-header">
                     <p className="livro-genero">{livro.genero}</p>
+                    <button
+                      type="button"
+                      className="btn-add-estante"
+                      onClick={(e) => adicionarAEstante(livro, e)}
+                      title={user ? "Salvar na Estante" : "Faça login para adicionar à estante"}
+                      disabled={!user || estanteIds.includes(livro.id)}
+                    >
+                      <img src={estanteIcon} alt="Salvar na Estante" />
+                    </button>
                   </div>
                   <h3>{livro.titulo}</h3>
                   <p className="livro-autor">{autoresMap[livro.autorId] || livro.autor || "Autor não informado"} • {livro.nacionalidade}</p>

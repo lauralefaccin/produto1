@@ -23,7 +23,7 @@ function ProtectedApp() {
   return (
     <div className="layout">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-      <div className={`content ${collapsed ? "expanded" : ""}`}>
+      <div className={`content ${collapsed ? "collapsed" : ""}`}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/livros" element={<Livros />} />

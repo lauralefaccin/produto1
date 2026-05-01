@@ -52,14 +52,35 @@ async function init() {
         criado_em        TIMESTAMP    DEFAULT NOW()
       );
 
-      -- Estante pessoal do leitor
+      -- Estante pessoal do usuário (leitores e bibliotecários)
       CREATE TABLE IF NOT EXISTS estante (
-        id          SERIAL PRIMARY KEY,
-        leitor_id   INTEGER NOT NULL REFERENCES leitores(id) ON DELETE CASCADE,
-        livro_id    INTEGER NOT NULL REFERENCES livros(id)   ON DELETE CASCADE,
+        id            SERIAL PRIMARY KEY,
+        usuario_id    INTEGER NOT NULL,
+        usuario_tipo  VARCHAR(20) NOT NULL DEFAULT 'leitor',
+        livro_id      INTEGER NOT NULL REFERENCES livros(id) ON DELETE CASCADE,
         adicionado_em TIMESTAMP DEFAULT NOW(),
-        UNIQUE(leitor_id, livro_id)
+        UNIQUE(usuario_tipo, usuario_id, livro_id)
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE estante
+      DROP COLUMN IF EXISTS leitor_id;
+    `);
+
+    await client.query(`
+      ALTER TABLE estante
+      ALTER COLUMN usuario_id SET NOT NULL;
+    `);
+
+    await client.query(`
+      ALTER TABLE estante
+      ALTER COLUMN usuario_tipo SET NOT NULL;
+    `);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS estante_usuario_uniq
+      ON estante (usuario_tipo, usuario_id, livro_id);
     `);
 
     console.log("✅ Tabelas criadas.");

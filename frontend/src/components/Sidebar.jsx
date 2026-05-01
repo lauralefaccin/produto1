@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import logo from "../imagens/logo.png";
+import logo from "../imagens/logolivro.png";
 import inicioIcon from "../imagens/icons/inicio.png";
 import tituloMenuIcon from "../imagens/icons/livro_branco.png";
 import autoresMenuIcon from "../imagens/icons/autores_branco.png";
@@ -65,14 +65,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       </nav>  
 
       {/* USER INFO + LOGOUT */}
-      <div style={{ marginTop: "auto" }}>
+      <div className="sidebar-footer">
         {!collapsed && user && (
-          <div style={{
-            background: "#2b170a",
-            borderRadius: "8px",
-            padding: "10px 12px",
-            marginBottom: "10px",
-          }}>
+          <div className="sidebar-user-card">
             <p style={{ margin: 0, fontSize: 11, color: "#c8922a", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
               {user.tipo === "bibliotecario" ? "Bibliotecário" : "Leitor"}
             </p>
@@ -89,6 +84,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
         <button
           onClick={logout}
+          className="logout-button"
           style={{
             width: "100%",
             background: "none",
@@ -104,7 +100,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             justifyContent: collapsed ? "center" : "flex-start",
             gap: "8px",
             transition: "0.2s",
-            marginBottom: "%",
+            marginBottom: "0",
           }}
           onMouseEnter={(e) => e.currentTarget.style.background = "rgba(200,146,42,0.1)"}
           onMouseLeave={(e) => e.currentTarget.style.background = "none"}

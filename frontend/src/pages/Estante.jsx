@@ -1,31 +1,36 @@
 import { useState, useEffect, useMemo } from "react";
 import { getGeneroColor, useGeneros } from "../data/generos";
-import { useAcervo } from "../data/acervo";
 import "./Livros.css"; // Reaproveitando os estilos
+import { api } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import lixeiraIcon from "../imagens/icons/lixeira.png";
 
-function loadEstanteIds() {
-  if (typeof window === "undefined") return [];
-  const saved = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
-  if (!Array.isArray(saved)) return [];
-  return saved
-    .map((item) => (typeof item === "number" ? item : item?.id))
-    .filter(Boolean);
-}
-
 export default function Estante() {
-  const [estanteIds, setEstanteIds] = useState(() => loadEstanteIds());
-  const acervo = useAcervo();
+  const { user } = useAuth();
+  const [livrosEstante, setLivrosEstante] = useState([]);
   const generos = useGeneros();
 
-  const livrosEstante = useMemo(
-    () => acervo.filter((livro) => estanteIds.includes(livro.id)),
-    [acervo, estanteIds]
-  );
-
   useEffect(() => {
-    setEstanteIds(loadEstanteIds());
-  }, [acervo]);
+    fetchEstante();
+    const handler = () => fetchEstante();
+    window.addEventListener("estante:changed", handler);
+    return () => window.removeEventListener("estante:changed", handler);
+  }, [user]);
+
+  async function fetchEstante() {
+    if (!user) {
+      setLivrosEstante([]);
+      return;
+    }
+
+    try {
+      const estante = await api.getEstante();
+      setLivrosEstante(estante);
+    } catch (err) {
+      console.error("Erro ao carregar estante:", err.message);
+      setLivrosEstante([]);
+    }
+  }
 
   const getCorGenero = (generoNome) => {
     const generoCustomizado = generos.find(g => g.nome === generoNome);
@@ -35,14 +40,18 @@ export default function Estante() {
     return getGeneroColor(generoNome);
   };
 
-  const removerDaEstante = (id) => {
+  const removerDaEstante = async (id) => {
     if (!window.confirm("Tem certeza de que deseja remover este livro da estante? Esta ação não pode ser desfeita.")) {
       return;
     }
-    const novaIds = estanteIds.filter((livroId) => livroId !== id);
-    setEstanteIds(novaIds);
-    localStorage.setItem("minhaEstante", JSON.stringify(novaIds));
-    window.dispatchEvent(new CustomEvent("estante:changed"));
+    try {
+      await api.removerEstante(id);
+      setLivrosEstante((current) => current.filter((livro) => livro.id !== id));
+      window.dispatchEvent(new CustomEvent("estante:changed"));
+    } catch (err) {
+      console.error("Erro ao remover da estante:", err.message);
+      alert("Não foi possível remover o livro da estante.");
+    }
   };
 
   return (

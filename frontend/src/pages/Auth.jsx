@@ -40,12 +40,12 @@ function LoginForm({ tipo, setTipo }) {
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!loginVal.trim() || !senha.trim()) {
       setErro("Preencha login e senha.");
       return;
     }
-    const result = login(loginVal.trim(), senha.trim(), tipo);
+    const result = await login(loginVal.trim(), senha.trim(), tipo);
     if (!result.ok) setErro(result.erro);
   }
 
@@ -67,6 +67,8 @@ function LoginForm({ tipo, setTipo }) {
         ))}
       </div>
 
+      {erro && <p className="auth-error">{erro}</p>}
+
       <Field
         label="Login"
         value={loginVal}
@@ -80,8 +82,6 @@ function LoginForm({ tipo, setTipo }) {
         onChange={(v) => { setSenha(v); setErro(""); }}
         placeholder="Sua senha"
       />
-
-      {erro && <p className="auth-error">{erro}</p>}
 
       <button className="auth-submit" onClick={handleSubmit}>
         Entrar →

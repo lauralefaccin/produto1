@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
-import { saveAcervo, useAcervo } from "../data/acervo";
+import { useMemo, useState, useEffect } from "react";
 import { saveAutores, useAutores } from "../data/autores";
 import { useAuth } from "../context/AuthContext";
 import { getGeneroColor, useGeneros } from "../data/generos";
+import { api } from "../services/api";
 import "./Livros.css";
 import estanteIcon from "../imagens/icons/estante (2).png";
 
@@ -16,10 +16,20 @@ const initialForm = {
 
 export default function Autores() {
   const autores = useAutores();
-  const acervo = useAcervo();
+  const [acervo, setAcervo] = useState([]);
+  const [carregandoLivros, setCarregandoLivros] = useState(true);
   const generos = useGeneros();
   const { user } = useAuth();
   const isBibliotecario = user?.tipo === "bibliotecario";
+  const [estanteIds, setEstanteIds] = useState([]);
+
+  const getCorGenero = (generoNome) => {
+    const generoCustomizado = generos.find((g) => g.nome === generoNome);
+    if (generoCustomizado?.cor) {
+      return generoCustomizado.cor;
+    }
+    return getGeneroColor(generoNome);
+  };
 
   const [busca, setBusca] = useState("");
   const [selectedAutor, setSelectedAutor] = useState(null);
@@ -34,7 +44,7 @@ export default function Autores() {
 
   const livrosDoAutor = useMemo(() => {
     if (!selectedAutor) return [];
-    return acervo.filter((livro) => livro.autorId === selectedAutor.id);
+    return acervo.filter((livro) => livro.autor === selectedAutor.nome);
   }, [acervo, selectedAutor]);
 
   const livrosFiltradosPorBusca = useMemo(() => {
@@ -47,27 +57,76 @@ export default function Autores() {
     });
   }, [selectedAutor, livrosDoAutor, busca]);
 
+  useEffect(() => {
+    async function loadEstante() {
+      if (!user) {
+        setEstanteIds([]);
+        return;
+      }
+
+      try {
+        const estante = await api.getEstante();
+        setEstanteIds(estante.map((item) => item.id));
+      } catch (err) {
+        console.error("Erro ao carregar estante:", err.message);
+        setEstanteIds([]);
+      }
+    }
+
+    loadEstante();
+    const handler = () => loadEstante();
+    window.addEventListener("estante:changed", handler);
+    return () => window.removeEventListener("estante:changed", handler);
+  }, [user]);
+
+  useEffect(() => {
+    async function loadLivros() {
+      if (!user) {
+        setAcervo([]);
+        setCarregandoLivros(false);
+        return;
+      }
+
+      try {
+        const livros = await api.getLivros();
+        setAcervo(livros);
+      } catch (err) {
+        console.error("Erro ao carregar livros:", err.message);
+        setAcervo([]);
+      } finally {
+        setCarregandoLivros(false);
+      }
+    }
+
+    loadLivros();
+  }, [user]);
+
   // FUNÇÃO PARA SALVAR NA ESTANTE
-  const adicionarAEstante = (livro, e) => {
+  const adicionarAEstante = async (livro, e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    
-    const estanteAtual = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
-    const ids = Array.isArray(estanteAtual)
-      ? estanteAtual.map((item) => (typeof item === "number" ? item : item?.id)).filter(Boolean)
-      : [];
 
-    if (ids.includes(livro.id)) {
+    if (!user) {
+      alert("Faça login para adicionar livros à estante.");
+      return;
+    }
+
+    if (estanteIds.includes(livro.id)) {
       alert("Este livro já está na sua estante!");
       return;
     }
 
-    const novaEstante = [...ids, livro.id];
-    localStorage.setItem("minhaEstante", JSON.stringify(novaEstante));
-    window.dispatchEvent(new CustomEvent("estante:changed"));
-    alert(`${livro.titulo} foi adicionado à sua Estante!`);
+    try {
+      await api.adicionarEstante(livro.id);
+      setEstanteIds((current) => [...current, livro.id]);
+      window.dispatchEvent(new CustomEvent("estante:changed"));
+      alert(`${livro.titulo} foi adicionado à sua Estante!`);
+    } catch (err) {
+      console.error("Erro ao adicionar à estante:", err.message);
+      alert("Não foi possível adicionar à estante no momento.");
+    }
   };
 
   const abrirAdicionarAutor = () => {
@@ -136,20 +195,6 @@ export default function Autores() {
     if (!window.confirm(`Tem certeza de que deseja excluir o autor ${autor.nome}? Esta ação removerá todos os livros dele, inclusive da Estante.`)) {
       return;
     }
-    const livrosRestantes = acervo.filter((livro) => livro.autorId !== autor.id);
-    saveAcervo(livrosRestantes);
-
-    const estanteAtual = JSON.parse(localStorage.getItem("minhaEstante") || "[]");
-    const idsRemovidos = acervo
-      .filter((livro) => livro.autorId === autor.id)
-      .map((livro) => livro.id);
-    const novaEstante = Array.isArray(estanteAtual)
-      ? estanteAtual
-          .map((item) => (typeof item === "number" ? item : item?.id))
-          .filter((id) => id && !idsRemovidos.includes(id))
-      : [];
-    localStorage.setItem("minhaEstante", JSON.stringify(novaEstante));
-    window.dispatchEvent(new CustomEvent("estante:changed"));
 
     saveAutores(autores.filter((item) => item.id !== autor.id));
     if (selectedAutor?.id === autor.id) {
@@ -302,7 +347,7 @@ export default function Autores() {
           {livrosFiltradosPorBusca.length > 0 ? (
             <div className="livros-grid">
               {livrosFiltradosPorBusca.map((livro) => (
-                <article key={livro.id} className="livro-card" style={{ "--livro-accent": getGeneroColor(livro.genero) }}>
+                <article key={livro.id} className="livro-card" style={{ "--livro-accent": getCorGenero(livro.genero) }}>
                   <div className="livro-card-header">
                     <p className="livro-genero">{livro.genero}</p>
                     <button 
@@ -336,7 +381,7 @@ export default function Autores() {
                 key={autor.id}
                 className="livro-card"
                 style={{
-                  "--livro-accent": getGeneroColor(generoPrincipal),
+                  "--livro-accent": getCorGenero(generoPrincipal),
                   cursor: "pointer",
                 }}
                 onClick={() => setSelectedAutor(autor)}

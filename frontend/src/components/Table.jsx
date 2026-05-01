@@ -1,12 +1,35 @@
-import { useMemo } from "react";
-import { useAcervo } from "../data/acervo";
+import { useMemo, useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
 
 export default function Table() {
-  const acervo = useAcervo();
-  const ultimosLivros = useMemo(
-    () => [...acervo].slice(-5).reverse(),
-    [acervo]
-  );
+  const { user } = useAuth();
+  const [livros, setLivros] = useState([]);
+
+  useEffect(() => {
+    async function loadLivros() {
+      if (!user) {
+        setLivros([]);
+        return;
+      }
+
+      try {
+        const livrosApi = await api.getLivros();
+        setLivros(livrosApi);
+      } catch (err) {
+        console.error("Erro ao carregar últimos livros:", err.message);
+        setLivros([]);
+      }
+    }
+
+    loadLivros();
+  }, [user]);
+
+  const ultimosLivros = useMemo(() => {
+    return [...livros]
+      .sort((a, b) => new Date(b.criado_em || b.adicionado_em || b.id) - new Date(a.criado_em || a.adicionado_em || a.id))
+      .slice(0, 5);
+  }, [livros]);
 
   return (
     <div className="table">
