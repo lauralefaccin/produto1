@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { saveAutores, useAutores } from "../data/autores";
 import { useAuth } from "../context/AuthContext";
+import { usePopup } from "../context/PopupContext";
 import { getGeneroColor, useGeneros } from "../data/generos";
 import { api } from "../services/api";
 import "./Livros.css";
@@ -21,6 +22,7 @@ export default function Autores() {
   const generos = useGeneros();
   const { user } = useAuth();
   const isBibliotecario = user?.tipo === "bibliotecario";
+  const { showPopup, showConfirmPopup } = usePopup();
   const [estanteIds, setEstanteIds] = useState([]);
 
   const getCorGenero = (generoNome) => {
@@ -109,12 +111,12 @@ export default function Autores() {
     }
 
     if (!user) {
-      alert("Faça login para adicionar livros à estante.");
+      showPopup("Faça login para adicionar livros à estante.");
       return;
     }
 
     if (estanteIds.includes(livro.id)) {
-      alert("Este livro já está na sua estante!");
+      showPopup("Este livro já está na sua estante!");
       return;
     }
 
@@ -122,10 +124,10 @@ export default function Autores() {
       await api.adicionarEstante(livro.id);
       setEstanteIds((current) => [...current, livro.id]);
       window.dispatchEvent(new CustomEvent("estante:changed"));
-      alert(`${livro.titulo} foi adicionado à sua Estante!`);
+      showPopup(`${livro.titulo} foi adicionado à sua Estante!`);
     } catch (err) {
       console.error("Erro ao adicionar à estante:", err.message);
-      alert("Não foi possível adicionar à estante no momento.");
+      showPopup("Não foi possível adicionar à estante no momento.");
     }
   };
 
@@ -166,7 +168,12 @@ export default function Autores() {
 
   const salvarAutor = () => {
     if (!formAutor.nome.trim()) {
-      alert("Preencha o nome do autor.");
+      showPopup("Preencha o nome do autor.");
+      return;
+    }
+
+    if (formAutor.principais_generos.length === 0) {
+      showPopup("Selecione pelo menos um gênero.");
       return;
     }
 
@@ -192,14 +199,15 @@ export default function Autores() {
   };
 
   const excluirAutor = (autor) => {
-    if (!window.confirm(`Tem certeza de que deseja excluir o autor ${autor.nome}? Esta ação removerá todos os livros dele, inclusive da Estante.`)) {
-      return;
-    }
-
-    saveAutores(autores.filter((item) => item.id !== autor.id));
-    if (selectedAutor?.id === autor.id) {
-      setSelectedAutor(null);
-    }
+    showConfirmPopup(
+      `Tem certeza de que deseja excluir o autor ${autor.nome}? Esta ação removerá todos os livros dele, inclusive da Estante.`,
+      () => {
+        saveAutores(autores.filter((item) => item.id !== autor.id));
+        if (selectedAutor?.id === autor.id) {
+          setSelectedAutor(null);
+        }
+      }
+    );
   };
 
   const voltarParaLista = () => setSelectedAutor(null);
@@ -255,7 +263,10 @@ export default function Autores() {
                 <input
                   type="number"
                   value={formAutor.ano_nascimento}
-                  onChange={(e) => setFormAutor((prev) => ({ ...prev, ano_nascimento: e.target.value }))}
+                  onChange={(e) => {
+                    const valor = e.target.value.slice(0, 4);
+                    setFormAutor((prev) => ({ ...prev, ano_nascimento: valor }));
+                  }}
                   placeholder="Ano de nascimento"
                 />
               </label>
@@ -297,10 +308,13 @@ export default function Autores() {
                 Descrição opcional
                 <textarea
                   value={formAutor.descricao}
-                  onChange={(e) => setFormAutor((prev) => ({ ...prev, descricao: e.target.value }))}
+                  onChange={(e) => {
+                    const valor = e.target.value.slice(0, 100);
+                    setFormAutor((prev) => ({ ...prev, descricao: valor }));
+                  }}
                   placeholder="Breve descrição do autor"
                   rows={4}
-                  style={{ resize: "vertical", minHeight: "96px", padding: "10px 12px", borderRadius: "12px", border: "1px solid #dfd1ba" }}
+                  style={{ resize: "vertical", minHeight: "96px", padding: "10px 12px", borderRadius: "12px", border: "1px solid #dfd1ba", fontFamily: "inherit", fontSize: "14px", color: "#3f311f", backgroundColor: "#fff" }}
                 />
               </label>
             </div>
@@ -390,9 +404,9 @@ export default function Autores() {
                   <p className="livro-genero">{generoPrincipal || "Autor"}</p>
                 </div>
                 <h3>{autor.nome}</h3>
-                <p className="livro-autor">{autor.nacionalidade || "Nacionalidade não informada"}</p>
-                <p className="livro-meta-row">{autor.ano_nascimento ? `Nascido em ${autor.ano_nascimento}` : "Ano de nascimento não informado"}</p>
-                {autor.descricao && <p className="livro-meta-row">{autor.descricao}</p>}
+                <p className="livro-autor">{autor.nacionalidade || ""}</p>
+                {autor.ano_nascimento && <p className="livro-meta-row">Nascido em {autor.ano_nascimento}</p>}
+                {autor.descricao && <p className="livro-descricao">{autor.descricao}</p>}
                 {generosAutor.length > 0 && (
                   <p className="livro-meta-row">Gêneros: {generosAutor.join(", ")}</p>
                 )}

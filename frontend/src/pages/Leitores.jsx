@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { api } from "../services/api";
+import { usePopup } from "../context/PopupContext";
 import "./Leitores.css";
 
 function mascaraCPF(valor) {
@@ -87,6 +88,7 @@ export default function Leitores() {
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
+  const { showPopup, showConfirmPopup } = usePopup();
 
   const filtered = useMemo(
     () => leitores.filter(
@@ -158,13 +160,14 @@ export default function Leitores() {
 
   // ── Delete ───────────────────────────────────────────────
   async function handleRemove(leitor) {
-    if (!window.confirm("Deseja remover este usuário?")) return;
-    try {
-      await api.deletarUsuario(leitor.tipo, leitor.id);
-      await carregar();
-    } catch (err) {
-      alert(`Erro: ${err.message}`);
-    }
+    showConfirmPopup("Deseja remover este usuário?", async () => {
+      try {
+        await api.deletarUsuario(leitor.tipo, leitor.id);
+        await carregar();
+      } catch (err) {
+        showPopup(`Erro: ${err.message}`);
+      }
+    });
   }
 
   return (

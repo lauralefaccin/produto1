@@ -3,12 +3,14 @@ import { getGeneroColor, useGeneros } from "../data/generos";
 import "./Livros.css"; // Reaproveitando os estilos
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { usePopup } from "../context/PopupContext";
 import lixeiraIcon from "../imagens/icons/lixeira.png";
 
 export default function Estante() {
   const { user } = useAuth();
   const [livrosEstante, setLivrosEstante] = useState([]);
   const generos = useGeneros();
+  const { showPopup, showConfirmPopup } = usePopup();
 
   useEffect(() => {
     fetchEstante();
@@ -41,17 +43,19 @@ export default function Estante() {
   };
 
   const removerDaEstante = async (id) => {
-    if (!window.confirm("Tem certeza de que deseja remover este livro da estante? Esta ação não pode ser desfeita.")) {
-      return;
-    }
-    try {
-      await api.removerEstante(id);
-      setLivrosEstante((current) => current.filter((livro) => livro.id !== id));
-      window.dispatchEvent(new CustomEvent("estante:changed"));
-    } catch (err) {
-      console.error("Erro ao remover da estante:", err.message);
-      alert("Não foi possível remover o livro da estante.");
-    }
+    showConfirmPopup(
+      "Tem certeza de que deseja remover este livro da estante? Esta ação não pode ser desfeita.",
+      async () => {
+        try {
+          await api.removerEstante(id);
+          setLivrosEstante((current) => current.filter((livro) => livro.id !== id));
+          window.dispatchEvent(new CustomEvent("estante:changed"));
+        } catch (err) {
+          console.error("Erro ao remover da estante:", err.message);
+          showPopup("Não foi possível remover o livro da estante.");
+        }
+      }
+    );
   };
 
   return (
@@ -85,7 +89,7 @@ export default function Estante() {
               <p className="livro-autor">{livro.autor}</p>
               
               <div className="livro-meta">
-                <button className="btn-ler" onClick={() => alert("Abrindo leitor...")}>
+                <button className="btn-ler" onClick={() => showPopup("Abrindo leitor...")}> 
                   Ler Livro
                 </button>
               </div>

@@ -70,6 +70,11 @@ export default function Stats() {
     );
   }, [livros]);
 
+  const truncateText = (text, maxLength) => {
+    if (typeof text !== 'string') return text;
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  };
+
   const statsData = [
     {
       title: "Títulos",
@@ -93,7 +98,7 @@ export default function Stats() {
     },
     {
       title: "Último adicionado",
-      value: livrosOrdenados.length > 0 ? livrosOrdenados[0].titulo : "Nenhum livro",
+      value: livrosOrdenados.length > 0 ? truncateText(livrosOrdenados[0].titulo, 15) : "Nenhum livro",
       iconUrl: estrelasIcon,
     },
   ];

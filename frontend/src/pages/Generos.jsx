@@ -8,6 +8,7 @@ import {
   saveGeneros,
 } from "../data/generos";
 import { useAuth } from "../context/AuthContext";
+import { usePopup } from "../context/PopupContext";
 import { api } from "../services/api";
 import estanteIcon from "../imagens/icons/estante (2).png";
 
@@ -68,6 +69,7 @@ export default function Generos() {
 
   const { user } = useAuth();
   const isBibliotecario = user?.tipo === "bibliotecario";
+  const { showPopup, showConfirmPopup } = usePopup();
 
   useEffect(() => {
     async function loadEstante() {
@@ -154,7 +156,7 @@ export default function Generos() {
     const cor = formGenero.cor.trim();
 
     if (!nome || !descricao) {
-      alert("Preencha nome e descrição do gênero.");
+      showPopup("Preencha nome e descrição do gênero.");
       return;
     }
 
@@ -163,7 +165,7 @@ export default function Generos() {
     );
 
     if (existeOutro) {
-      alert("Já existe um gênero com esse nome.");
+      showPopup("Já existe um gênero com esse nome.");
       return;
     }
 
@@ -190,12 +192,12 @@ export default function Generos() {
     }
 
     if (!user) {
-      alert("Faça login para adicionar livros à estante.");
+      showPopup("Faça login para adicionar livros à estante.");
       return;
     }
 
     if (estanteIds.includes(livro.id)) {
-      alert("Este livro já está na sua estante!");
+      showPopup("Este livro já está na sua estante!");
       return;
     }
 
@@ -203,31 +205,29 @@ export default function Generos() {
       await api.adicionarEstante(livro.id);
       setEstanteIds((current) => [...current, livro.id]);
       window.dispatchEvent(new CustomEvent("estante:changed"));
-      alert(`${livro.titulo} foi adicionado à sua Estante!`);
+      showPopup(`${livro.titulo} foi adicionado à sua Estante!`);
     } catch (err) {
       console.error("Erro ao adicionar à estante:", err.message);
-      alert("Não foi possível adicionar à estante no momento.");
+      showPopup("Não foi possível adicionar à estante no momento.");
     }
   };
 
   const excluirGenero = (item) => {
     const qtd = livrosPorGenero[item.nome] || 0;
     if (qtd > 0) {
-      alert("Não é possível excluir gêneros que têm livros cadastrados.");
+      showPopup("Não é possível excluir gêneros que têm livros cadastrados.");
       return;
     }
 
-    if (!window.confirm(`Deseja excluir o gênero "${item.nome}"?`)) {
-      return;
-    }
+    showConfirmPopup(`Deseja excluir o gênero "${item.nome}"?`, () => {
+      const generosAtuais = generos.filter((genero) => genero.nome !== item.nome);
+      setGeneros(generosAtuais);
+      saveGeneros(generosAtuais);
 
-    const generosAtuais = generos.filter((genero) => genero.nome !== item.nome);
-    setGeneros(generosAtuais);
-    saveGeneros(generosAtuais);
-
-    if (editandoGenero === item.nome) {
-      cancelarFormulario();
-    }
+      if (editandoGenero === item.nome) {
+        cancelarFormulario();
+      }
+    });
   };
 
   return (
@@ -295,10 +295,15 @@ export default function Generos() {
               </label>
               <label style={{ gridColumn: "1 / -1" }}>
                 Descrição
-                <input
+                <textarea
                   value={formGenero.descricao}
-                  onChange={(event) => setFormGenero((prev) => ({ ...prev, descricao: event.target.value }))}
+                  onChange={(event) => {
+                    const valor = event.target.value.slice(0, 80);
+                    setFormGenero((prev) => ({ ...prev, descricao: valor }));
+                  }}
                   placeholder="Descrição do gênero"
+                  rows={3}
+                  style={{ resize: "vertical", minHeight: "72px", padding: "10px 12px", borderRadius: "12px", border: "1px solid #dfd1ba", fontFamily: "inherit", fontSize: "14px", color: "#3f311f", backgroundColor: "#fff" }}
                 />
               </label>
             </div>
@@ -382,7 +387,7 @@ export default function Generos() {
                 onKeyPress={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedGenero(item)}
               >
                 <h3>{item.nome}</h3>
-                <p className="livro-autor">{item.descricao}</p>
+                <p className="livro-descricao">{item.descricao}</p>
 
                 <div className="livro-meta">
                   <p>Livros no acervo</p>

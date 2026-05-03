@@ -4,6 +4,7 @@ import "./Livros.css";
 import { GENEROS, getGeneroColor, useGeneros } from "../data/generos";
 import { useAutores } from "../data/autores";
 import { useAuth } from "../context/AuthContext";
+import { usePopup } from "../context/PopupContext";
 import { api } from "../services/api";
 import estanteIcon from "../imagens/icons/estante (2).png";
 
@@ -25,6 +26,7 @@ export default function Livros() {
 
   const { user } = useAuth();
   const isBibliotecario = user?.tipo === "bibliotecario";
+  const { showPopup, showConfirmPopup } = usePopup();
   const [acervo, setAcervo] = useState([]);
   const [estanteIds, setEstanteIds] = useState([]);
 
@@ -142,12 +144,12 @@ export default function Livros() {
     }
 
     if (!user) {
-      alert("Faça login para adicionar livros à estante.");
+      showPopup("Faça login para adicionar livros à estante.");
       return;
     }
 
     if (estanteIds.includes(livro.id)) {
-      alert("Este livro já está na sua estante!");
+      showPopup("Este livro já está na sua estante!");
       return;
     }
 
@@ -156,10 +158,10 @@ export default function Livros() {
       const novaEstante = [...estanteIds, livro.id];
       setEstanteIds(novaEstante);
       window.dispatchEvent(new CustomEvent("estante:changed"));
-      alert(`${livro.titulo} foi adicionado à sua Estante!`);
+      showPopup(`${livro.titulo} foi adicionado à sua Estante!`);
     } catch (err) {
       console.error("Erro ao adicionar à estante:", err.message);
-      alert("Não foi possível adicionar à estante no momento.");
+      showPopup("Não foi possível adicionar à estante no momento.");
     }
   };
 
@@ -191,7 +193,7 @@ export default function Livros() {
 
   const salvarLivro = async () => {
     if (!formLivro.titulo.trim() || !formLivro.autorId || !formLivro.genero.trim()) {
-      alert("Preencha pelo menos título, autor e gênero.");
+      showPopup("Preencha pelo menos título, autor e gênero.");
       return;
     }
 
@@ -199,7 +201,7 @@ export default function Livros() {
     const autorNome = autoresMap[autorId] || formLivro.autorNome.trim();
 
     if (!autorId || !autorNome) {
-      alert("Selecione um autor válido existente.");
+      showPopup("Selecione um autor válido existente.");
       return;
     }
 
@@ -225,25 +227,27 @@ export default function Livros() {
       cancelarFormulario();
     } catch (err) {
       console.error("Erro ao salvar livro:", err.message);
-      alert("Não foi possível salvar o livro no momento.");
+      showPopup("Não foi possível salvar o livro no momento.");
     }
   };
 
   const excluirLivro = async (livro) => {
-    if (!window.confirm(`Tem certeza de que deseja excluir "${livro.titulo}"? Esta ação removerá o livro de todas as páginas, incluindo a Estante de leitores.`)) {
-      return;
-    }
-    try {
-      await api.deletarLivro(livro.id);
-      setAcervo((current) => current.filter((item) => item.id !== livro.id));
-      window.dispatchEvent(new CustomEvent("estante:changed"));
-      if (editandoId === livro.id) {
-        cancelarFormulario();
+    showConfirmPopup(
+      `Tem certeza de que deseja excluir "${livro.titulo}"? Esta ação removerá o livro de todas as páginas, incluindo a Estante de leitores.`,
+      async () => {
+        try {
+          await api.deletarLivro(livro.id);
+          setAcervo((current) => current.filter((item) => item.id !== livro.id));
+          window.dispatchEvent(new CustomEvent("estante:changed"));
+          if (editandoId === livro.id) {
+            cancelarFormulario();
+          }
+        } catch (err) {
+          console.error("Erro ao excluir livro:", err.message);
+          showPopup("Não foi possível excluir o livro no momento.");
+        }
       }
-    } catch (err) {
-      console.error("Erro ao excluir livro:", err.message);
-      alert("Não foi possível excluir o livro no momento.");
-    }
+    );
   };
 
   return (
@@ -343,7 +347,10 @@ export default function Livros() {
                 Editora
                 <input
                   value={formLivro.editora}
-                  onChange={(e) => setFormLivro((prev) => ({ ...prev, editora: e.target.value }))}
+                  onChange={(e) => {
+                    const valor = e.target.value.slice(0, 30);
+                    setFormLivro((prev) => ({ ...prev, editora: valor }));
+                  }}
                   placeholder="Editora"
                 />
               </label>
@@ -351,7 +358,10 @@ export default function Livros() {
                 Ano
                 <input
                   value={formLivro.ano}
-                  onChange={(e) => setFormLivro((prev) => ({ ...prev, ano: e.target.value }))}
+                  onChange={(e) => {
+                    const valor = e.target.value.slice(0, 4);
+                    setFormLivro((prev) => ({ ...prev, ano: valor }));
+                  }}
                   placeholder="Ano de publicação"
                   type="number"
                 />
@@ -389,9 +399,9 @@ export default function Livros() {
                 </button>
               </div>
               <h3>{livro.titulo}</h3>
-              <p className="livro-autor">{getAutorNome(livro)} • {livro.nacionalidade}</p>
+              <p className="livro-autor">{getAutorNome(livro) || ""}{getAutorNome(livro) && livro.nacionalidade ? " • " : ""}{livro.nacionalidade || ""}</p>
               <div className="livro-meta">
-                <p>{livro.editora} • {livro.ano}</p>
+                <p>{livro.editora?.substring(0, 30) || ""}{livro.editora && livro.ano ? " • " : ""}{livro.ano ? String(livro.ano).substring(0, 4) : ""}</p>
               </div>
               {isBibliotecario && (
                 <div className="livro-card-actions">
@@ -427,8 +437,8 @@ export default function Livros() {
               <div>
                 <p className="livro-genero">{livro.genero}</p>
                 <h3>{livro.titulo}</h3>
-                <p className="livro-autor">{getAutorNome(livro)}</p>
-                <p className="livro-meta-row">{livro.editora} • {livro.ano}</p>
+                <p className="livro-autor">{getAutorNome(livro) || ""}</p>
+                <p className="livro-meta-row">{livro.editora?.substring(0, 30) || ""}{livro.editora && livro.ano ? " • " : ""}{livro.ano ? String(livro.ano).substring(0, 4) : ""}</p>
                 {isBibliotecario && (
                   <div className="livro-row-actions">
                     <button

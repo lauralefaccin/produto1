@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { PopupProvider } from "./context/PopupContext";
 import "./App.css";
 
 // Reseta os estilos do #root definidos no index.css padrão do Vite
@@ -13,6 +14,8 @@ if (rootEl) {
 
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
-    <App />
+    <PopupProvider>
+      <App />
+    </PopupProvider>
   </React.StrictMode>
 );
