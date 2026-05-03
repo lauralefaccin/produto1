@@ -19,12 +19,12 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     { path: "/", label: "Início", iconUrl: inicioIcon },
     { path: "/livros", label: "Livros", iconUrl: tituloMenuIcon },
     { path: "/autores", label: "Autores", iconUrl: autoresMenuIcon },
+    { path: "/generos", label: "Gêneros", iconUrl: generosMenuIcon },
     // Leitores só aparece para bibliotecários
     ...(user?.tipo === "bibliotecario"
       ? [{ path: "/leitores", label: "Leitores", iconUrl: leitoresMenuIcon }]
       : []),
-    { path: "/estante", label: "Estante", iconUrl: estanteMenuIcon },
-    { path: "/generos", label: "Gêneros", iconUrl: generosMenuIcon },
+      { path: "/estante", label: "Estante", iconUrl: estanteMenuIcon },
   ];
 
   return (

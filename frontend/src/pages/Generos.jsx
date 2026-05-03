@@ -211,6 +211,12 @@ export default function Generos() {
   };
 
   const excluirGenero = (item) => {
+    const qtd = livrosPorGenero[item.nome] || 0;
+    if (qtd > 0) {
+      alert("Não é possível excluir gêneros que têm livros cadastrados.");
+      return;
+    }
+
     if (!window.confirm(`Deseja excluir o gênero "${item.nome}"?`)) {
       return;
     }
@@ -226,44 +232,44 @@ export default function Generos() {
 
   return (
     <section className="livros-page">
-      <header className="livros-header">
-        <div>
-          <p className="livros-kicker">Catálogo</p>
-          <h1>Gêneros</h1>
-        </div>
+      {!selectedGenero && (
+        <>
+          <header className="livros-header">
+            <div>
+              <p className="livros-kicker">Catálogo</p>
+              <h1>Gêneros</h1>
+            </div>
 
-        {isBibliotecario && !selectedGenero && (
-          <button type="button" className="livros-add-btn" onClick={abrirAdicionarGenero}>
-            + Adicionar Gênero
-          </button>
-        )}
-      </header>
+            {isBibliotecario && (
+              <button type="button" className="livros-add-btn" onClick={abrirAdicionarGenero}>
+                + Adicionar Gênero
+              </button>
+            )}
+          </header>
 
-      <div className="livros-filters">
-        <label htmlFor="busca-generos" className="livros-search">
-          <span aria-hidden="true">🔎</span>
-          <input
-            id="busca-generos"
-            type="search"
-            value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            placeholder={selectedGenero ? "Pesquisar livros ou nome do autor" : "Pesquisar gênero..."}
-          />
-        </label>
+          <div className="livros-filters">
+            <label htmlFor="busca-generos" className="livros-search">
+              <span aria-hidden="true">🔎</span>
+              <input
+                id="busca-generos"
+                type="search"
+                value={busca}
+                onChange={(event) => setBusca(event.target.value)}
+                placeholder="Pesquisar gênero..."
+              />
+            </label>
 
-        <select disabled aria-label="Todos os gêneros">
-          <option>Todos os gêneros</option>
-        </select>
-
-        <select
-          value={modo}
-          onChange={(event) => setModo(event.target.value)}
-          aria-label="Modo de visualização"
-        >
-          <option value="cards">Cards</option>
-          <option value="lista">Lista</option>
-        </select>
-      </div>
+            <select
+              value={modo}
+              onChange={(event) => setModo(event.target.value)}
+              aria-label="Modo de visualização"
+            >
+              <option value="cards">Cards</option>
+              <option value="lista">Lista</option>
+            </select>
+          </div>
+        </>
+      )}
 
       {formAberto && (
         <>
@@ -321,6 +327,16 @@ export default function Generos() {
           </div>
 
           <div className="livros-filters" style={{ marginBottom: 10, borderBottom: "none" }}>
+            <label htmlFor="busca-livros" className="livros-search">
+              <span aria-hidden="true">🔎</span>
+              <input
+                id="busca-livros"
+                type="search"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Pesquisar livros ou nome do autor..."
+              />
+            </label>
             <p style={{ margin: 0, color: "#6f5f49" }}>{livrosFiltradosPorBusca.length} livro(s) encontrado(s) para este gênero.</p>
           </div>
 

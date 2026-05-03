@@ -96,6 +96,11 @@ export default function Livros() {
     [autores]
   );
 
+  const autoresMapByNome = useMemo(
+    () => Object.fromEntries(autores.map((autor) => [autor.nome.trim().toLowerCase(), autor.id])),
+    [autores]
+  );
+
   const generosOptions = useMemo(
     () => ["Todos os gêneros", ...generos.map((g) => g.nome)],
     [generos]
@@ -104,6 +109,17 @@ export default function Livros() {
   const getAutorNome = (livro) => {
     const autorId = Number(livro.autorId);
     return autoresMap[autorId] || livro.autor || "";
+  };
+
+  const getAutorId = (livro) => {
+    const autorId = Number(livro.autorId ?? livro.autor_id);
+    if (autorId) {
+      return autorId.toString();
+    }
+
+    const autorNome = (livro.autor || "").trim().toLowerCase();
+    const autorEncontradoId = autoresMapByNome[autorNome];
+    return autorEncontradoId ? autorEncontradoId.toString() : "";
   };
 
   const livrosFiltrados = useMemo(() => {
@@ -157,7 +173,7 @@ export default function Livros() {
     setFormLivro({
       genero: livro.genero || "",
       titulo: livro.titulo || "",
-      autorId: livro.autorId?.toString() || "",
+      autorId: getAutorId(livro),
       autorNome: getAutorNome(livro),
       nacionalidade: livro.nacionalidade || "",
       editora: livro.editora || "",

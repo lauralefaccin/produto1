@@ -49,6 +49,7 @@
 
 .livros-filters {
   display: grid;
+  align-items: center;
   grid-template-columns: minmax(280px, 1fr) auto auto;
   gap: 8px;
   margin-bottom: 14px;
