@@ -52,6 +52,15 @@ Inicialize as tabelas e dados iniciais:
 ```bash
 npm run db:init
 ```
+Use caso for preciso apagar as tabelas:
+
+```bash
+npm run db:reset
+```
+e depois use denovo para criar as tabelas:
+```bash
+npm run db:init
+```
 
 Inicie o servidor:
 
