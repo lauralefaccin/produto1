@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { usePopup } from "../context/PopupContext";
 import { api } from "../services/api";
 import OpenLibrarySearch from "../components/OpenLibrarySearch";
+import { buscarNaInternetArchive } from "../services/internetArchiveApi";
 import estanteIcon from "../imagens/icons/estante (2).png";
 
 export default function Livros() {
@@ -53,11 +54,13 @@ export default function Livros() {
     ano: "",
     sinopse: "",
     conteudo: "",
+    archiveId: "",
   };
 
   const [formLivro, setFormLivro] = useState(initialForm);
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
+  const [buscandoArchive, setBuscandoArchive] = useState(false);
 
   useEffect(() => {
     async function loadEstante() {
@@ -166,6 +169,25 @@ export default function Livros() {
         ? livroOL.nacionalidade.substring(0, NACIONALIDADE_MAX_LENGTH)
         : prev.nacionalidade,
     }));
+
+    // Tenta localizar, em paralelo, uma versão de leitura livre na
+    // Internet Archive para este título/autor.
+    buscarLeituraNaArchive(livroOL.titulo, livroOL.autor);
+  }
+
+  // ── Internet Archive: localizar versão de leitura livre ───
+  async function buscarLeituraNaArchive(titulo, autor) {
+    if (!titulo || !titulo.trim()) return;
+    setBuscandoArchive(true);
+    try {
+      const identifier = await buscarNaInternetArchive(titulo, autor);
+      setFormLivro((prev) => ({ ...prev, archiveId: identifier || "" }));
+    } catch {
+      // Sem versão de leitura livre encontrada — o campo fica vazio
+      // e o bibliotecário pode preencher manualmente o "conteúdo".
+    } finally {
+      setBuscandoArchive(false);
+    }
   }
 
   // ── Adicionar à estante ────────────────────────────────────
@@ -201,6 +223,7 @@ export default function Livros() {
       ano: livro.ano?.toString() || "",
       sinopse: livro.sinopse || "",
       conteudo: livro.conteudo || "",
+      archiveId: livro.archive_id || livro.archiveId || "",
     });
     setEditandoId(livro.id);
     setFormAberto(true);
@@ -234,6 +257,7 @@ export default function Livros() {
       ano: Number(formLivro.ano) || 0,
       sinopse: formLivro.sinopse.trim(),
       conteudo: formLivro.conteudo.trim(),
+      archiveId: formLivro.archiveId.trim(),
     };
     try {
       if (editandoId) {
@@ -400,6 +424,28 @@ export default function Livros() {
                   rows={10}
                   style={{ resize: "vertical", minHeight: "180px", padding: "10px 12px", borderRadius: "12px", border: "1px solid #dfd1ba", fontFamily: "inherit", fontSize: "14px", color: "#3f311f", backgroundColor: "#fff" }}
                 />
+              </label>
+              <label style={{ gridColumn: "1 / -1" }}>
+                Leitura via Internet Archive (opcional)
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input
+                    value={formLivro.archiveId}
+                    onChange={(e) => setFormLivro((prev) => ({ ...prev, archiveId: e.target.value.trim() }))}
+                    placeholder="Identificador do item na archive.org (preenchido automaticamente, se encontrado)"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => buscarLeituraNaArchive(formLivro.titulo, formLivro.autorNome)}
+                    disabled={buscandoArchive || !formLivro.titulo.trim()}
+                  >
+                    {buscandoArchive ? "Buscando..." : "Buscar"}
+                  </button>
+                </div>
+                <small style={{ color: "#8a7a5f" }}>
+                  Se encontrado, os leitores poderão ler o livro direto no site, embutido da Internet Archive.
+                  Caso contrário, a leitura usa o texto colado em "Conteúdo do livro".
+                </small>
               </label>
               <label>
                 Editora

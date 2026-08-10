@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { usePopup } from "../context/PopupContext";
 import { useGeneros } from "../data/generos";
 import { useAutores } from "../data/autores";
+import { getLeituraEmbedUrl, getLeituraDetailsUrl } from "../services/internetArchiveApi";
 import estanteIcon from "../imagens/icons/estante (2).png";
 import estrelaVazadaIcon from "../imagens/icons/estrela_vazada.png";
 import estrelaCheiaIcon from "../imagens/icons/estrela (2).png";
@@ -288,9 +289,31 @@ export default function BookDetail() {
               </button>
             </header>
             <article className="book-read-content">
-              <div className="book-read-text">
-                {livro.conteudo || livro.sinopse || "Conteúdo de leitura não disponível."}
-              </div>
+              {livro.archive_id ? (
+                <div className="book-read-archive">
+                  <iframe
+                    className="book-read-archive-frame"
+                    src={getLeituraEmbedUrl(livro.archive_id)}
+                    title={`Leitor da Internet Archive — ${livro.titulo}`}
+                    allowFullScreen
+                  />
+                  <p className="book-read-archive-credit">
+                    Leitura fornecida pela{" "}
+                    
+                      href={getLeituraDetailsUrl(livro.archive_id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    <a>
+                      Internet Archive
+                    </a>
+                    .
+                  </p>
+                </div>
+              ) : (
+                <div className="book-read-text">
+                  {livro.conteudo || livro.sinopse || "Conteúdo de leitura não disponível."}
+                </div>
+              )}
             </article>
           </div>
         </div>
