@@ -1,8 +1,41 @@
 import pool from "./pool.js";
 import bcrypt from "bcrypt";
 import { fileURLToPath } from "url";
+import { buscarNaInternetArchive } from "../services/internetArchive.js";
 
 const __filename = fileURLToPath(import.meta.url);
+
+// ── Internet Archive: preencher archive_id dos livros de exemplo ──
+// Roda só uma vez, logo depois do seed inicial dos livros. Para cada
+// livro, tenta achar uma versão de leitura livre na Internet Archive
+// e já grava o archive_id — assim os livros de exemplo já nascem
+// prontos para leitura embutida, quando existir versão disponível.
+// Se algum livro não tiver versão livre (ex: obras ainda protegidas
+// por direitos autorais), simplesmente fica sem archive_id, e a
+// leitura cai no texto de "conteudo"/sinopse, como já acontecia antes.
+async function enriquecerLivrosComInternetArchive(client) {
+  console.log("🔎 Buscando versões de leitura na Internet Archive...");
+  const { rows } = await client.query("SELECT id, titulo, autor FROM livros");
+
+  let encontrados = 0;
+  for (const livro of rows) {
+    try {
+      const identifier = await buscarNaInternetArchive(livro.titulo, livro.autor);
+      if (identifier) {
+        await client.query("UPDATE livros SET archive_id = $1 WHERE id = $2", [
+          identifier,
+          livro.id,
+        ]);
+        encontrados++;
+        console.log(`   ✓ "${livro.titulo}" → ${identifier}`);
+      }
+    } catch (err) {
+      console.warn(`   ⚠ Não foi possível buscar "${livro.titulo}": ${err.message}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  console.log(`✅ Internet Archive: ${encontrados}/${rows.length} livros com leitura disponível.`);
+}
 
 export async function initDatabase({ closePool = true } = {}) {
   const client = await pool.connect();
@@ -288,6 +321,7 @@ export async function initDatabase({ closePool = true } = {}) {
          'Um piloto que faz um pouso forçado no deserto do Saara encontra um menino misterioso vindo de um asteroide distante. Através de suas conversas, o pequeno príncipe conta suas aventuras visitando diferentes planetas e personagens. Uma fábula filosófica atemporal sobre amizade, amor, solidão e o que os adultos esquecem ao crescer.')
       `);
       console.log("✅ Livros inseridos.");
+      await enriquecerLivrosComInternetArchive(client);
     }
 
     // ── Seed: Admin bibliotecário ──────────────────────────────────
