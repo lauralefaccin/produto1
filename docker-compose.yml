@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # 1. Banco de Dados (Baixa a imagem oficial automaticamente)
+  db:
+    image: postgres:15-alpine
+    container_name: atlas_banco
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: atlasbook
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Caso tenha um script SQL inicial para criar as tabelas do zero:
+      # - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  # 2. Backend (Baixa a sua imagem do Docker Hub)
+  backend:
+    image: filipecasa/meu-backend:v1
+    container_name: atlas_backend
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db            # Aponta para o container 'db' acima
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: atlasbook
+      DB_PORT: 5432
+    depends_on:
+      - db
+
+  # 3. Frontend (Baixa a sua imagem do Docker Hub)
+  frontend:
+    image: filipecasa/meu-frontend:v1
+    container_name: atlas_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
